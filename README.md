@@ -63,8 +63,9 @@ python -m mariadb_kernel.install
 ```
 
 # Using the kernel
-Once the kernel is installed, when you open Jupyter Lab, you should have the option to create a new `MariaDB` notebook,
-
+Once the kernel is installed, when you open Jupyter Lab, you should have the option to create a new `MariaDB` notebook.
+<br />
+<img src="https://raw.githubusercontent.com/MariaDB/mariadb_kernel/master/static/lab_open.png" width="400" height="130">
 ### Note
 Please make sure there is a running instance of MariaDB Server before the notebook is created
 
