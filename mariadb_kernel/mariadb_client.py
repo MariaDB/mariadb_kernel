@@ -32,7 +32,8 @@ class MariaREPL(replwrap.REPLWrapper):
 
 class MariaDBClient:
     def __init__(self, log, config):
-        client_bin = "/home/bindar/MariaDB/server/client/mariadb"
+        self.maria_repl = None
+        client_bin = "mariadb"
         kernel_args = "-s -H"
         args = config.get_args()
         self.cmd = f"{client_bin} {kernel_args} {args}"
@@ -40,20 +41,42 @@ class MariaDBClient:
         self.prompt = re.compile(r"MariaDB \[.*\]>[ \t]")
         self.log = log
 
+    def _launch_client(self):
+        self.maria_repl = MariaREPL(
+            self.cmd,
+            orig_prompt=self.prompt,
+            prompt_change=None,
+            continuation_prompt=None,
+        )
+
     def start(self):
         try:
-            self.maria_repl = MariaREPL(
-                self.cmd,
-                orig_prompt=self.prompt,
-                prompt_change=None,
-                continuation_prompt=None,
-            )
-            self.log.info("MariaDB client was started")
-        except pexpect.ExceptionPexpect as e:
+            self._launch_client()
+            self.log.info("MariaDB client was successfully started")
+        except EOF as e:
+            self.log.error("MariaDB client failed to start")
+
+            if "Access denied for user" in e.value:
+                self.log.error("The credentials used for connecting are wrong")
+                raise LoginError()
+
+            self.log.error("Most probably the MariaDB server is not started")
+            assert "Can't connect" in e.value
+
+            # Let the kernel know the server is down
+            raise ServerIsDownError()
+        except ExceptionPexpect as e:
             self.log.error(f"MariaDB client failed to start: {e}")
-            # TODO: attempt a restart and raise exception if it fails again
+            self.log.error(f"Retrying")
+
+            # If client fails again, exception should be propagated upwards
+            # so that the kernel can fail
+            self._launch_client()
 
     def stop(self):
+        if self.maria_repl is None:
+            return
+
         # pexpect will always raise EOF because the mariadb client exits,
         # better we just expect it
         self.maria_repl.child.sendline("quit")
@@ -65,6 +88,7 @@ class MariaDBClient:
             return ""
 
         result = ""
+        #TODO: double check exception handling
         try:
             result = self.maria_repl.run_command(code, timeout)
         except EOF as e:
@@ -81,3 +105,9 @@ class MariaDBClient:
             # TODO: attempt to rerun the cmd and raise exception if failure
 
         return result
+
+class ServerIsDownError(Exception):
+    pass
+
+class LoginError(Exception):
+    pass
