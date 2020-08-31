@@ -23,12 +23,12 @@ class MariaDBServer:
                 stderr = subprocess.PIPE)
 
         self._wait_server(self.server.stderr, b"mariadbd: ready for connections")
-        self.log.info(f"Started MariaDB server successfully")
+        self.log.info("Started MariaDB server successfully")
 
     def stop(self):
         self.server.send_signal(signal.SIGQUIT)
         self._wait_server(self.server.stderr, b"mariadbd: Shutdown complete")
-        self.log.info(f"Stopped MariaDB server successfully")
+        self.log.info("Stopped MariaDB server successfully")
 
     def _wait_server(self, stream, msg):
         while True:

@@ -35,7 +35,13 @@ class MariaDBKernel(Kernel):
         try:
             self.mariadb_client.start()
         except ServerIsDownError:
-            # Start a single MariaDB server so the user has a better experience
+            if not self.client_config.start_server():
+                self.log.error("The options passed through mariadb_kernel.json "
+                               "prevent the kernel from starting a testing "
+                               "MariaDB server instance")
+                raise
+
+            # Start a single MariaDB server for a better experience
             # if user wants to quickly test the kernel
             self.mariadb_server = MariaDBServer(self.log)
             self.mariadb_server.start()

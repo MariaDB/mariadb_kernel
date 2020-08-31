@@ -16,6 +16,7 @@ class ClientConfig:
             "host": "localhost",
             "port": "3306",
             "password": "",
+            "start_server": "True"
         }
 
         self._load_config()
@@ -67,6 +68,11 @@ class ClientConfig:
 
     def get_args(self):
         rv = ""
-        for key, value in self.default_config.items():
+        keys = ["user", "host", "port", "password"]
+        for key in keys:
+            value = self.default_config[key]
             rv += f"--{key}={value} "
         return rv
+
+    def start_server(self):
+        return self.default_config['start_server'] == "True"
