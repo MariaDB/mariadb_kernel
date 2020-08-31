@@ -9,16 +9,29 @@ tries to spin a new instance for testing purposes and issues a warning.
 # Copyright (c) MariaDB Foundation.
 # Distributed under the terms of the Modified BSD License.
 
+import subprocess
+import signal
+import time
 
 class MariaDBServer:
-    def __init__(self):
-        pass
+    def __init__(self, log):
+        self.log = log
 
     def start(self):
-        pass
+        self.server = subprocess.Popen(
+                ["mariadbd"], stdout = subprocess.PIPE,
+                stderr = subprocess.PIPE)
+
+        self._wait_server(self.server.stderr, b"mariadbd: ready for connections")
+        self.log.info(f"Started MariaDB server successfully")
 
     def stop(self):
-        pass
+        self.server.send_signal(signal.SIGQUIT)
+        self._wait_server(self.server.stderr, b"mariadbd: Shutdown complete")
+        self.log.info(f"Stopped MariaDB server successfully")
 
-    def server_ready(self):
-        pass
+    def _wait_server(self, stream, msg):
+        while True:
+            line = stream.readline()
+            if msg in line:
+                return

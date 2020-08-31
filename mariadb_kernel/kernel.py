@@ -6,8 +6,9 @@ from ipykernel.kernelbase import Kernel
 
 from mariadb_kernel._version import __version__
 from mariadb_kernel.client_config import ClientConfig
-from mariadb_kernel.mariadb_client import MariaDBClient
+from mariadb_kernel.mariadb_client import MariaDBClient, ServerIsDownError
 from mariadb_kernel.code_parser import CodeParser
+from mariadb_kernel.mariadb_server import MariaDBServer
 
 import logging
 import pexpect
@@ -29,8 +30,19 @@ class MariaDBKernel(Kernel):
         self.log.setLevel(logging.INFO)
         self.client_config = ClientConfig(self.log)
         self.mariadb_client = MariaDBClient(self.log, self.client_config)
+        self.mariadb_server = None
 
-        self.mariadb_client.start()
+        try:
+            self.mariadb_client.start()
+        except ServerIsDownError:
+            # Start a single MariaDB server so the user has a better experience
+            # if user wants to quickly test the kernel
+            self.mariadb_server = MariaDBServer(self.log)
+            self.mariadb_server.start()
+
+            # Reconnect the client now that the server is up
+            self.mariadb_client.start()
+
 
     def _execute_magics(self, magics):
         # TODO: implement execution of magics
@@ -59,6 +71,8 @@ class MariaDBKernel(Kernel):
 
     def do_shutdown(self, restart):
         self.mariadb_client.stop()
+        if self.mariadb_server:
+                self.mariadb_server.stop()
 
     def do_complete(self, code, cursor_pos):
         return {"status": "ok", "matches": ["test"]}
