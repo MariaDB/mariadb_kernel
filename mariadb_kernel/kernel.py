@@ -9,6 +9,7 @@ from mariadb_kernel.client_config import ClientConfig
 from mariadb_kernel.mariadb_client import MariaDBClient, ServerIsDownError
 from mariadb_kernel.code_parser import CodeParser
 from mariadb_kernel.mariadb_server import MariaDBServer
+from mariadb_kernel.maria_magics.maria_magic import MariaMagic
 
 import logging
 import pexpect
@@ -50,21 +51,26 @@ class MariaDBKernel(Kernel):
             self.mariadb_client.start()
 
 
-    def _execute_magics(self, magics):
+    def _execute_magics(self, magics, result_dict):
         # TODO: implement execution of magics
         self.log.error(f"########## parsed magics: {magics}")
+
+        for magic in magics:
+            magic.execute(result_dict, None)
+
 
     def do_execute(
         self, code, silent, store_history=True, user_expressions=None, allow_stdin=False
     ):
-        parser = CodeParser(code)
-
-        self._execute_magics(parser.get_magics())
+        parser = CodeParser(self.log, code)
 
         result = self.mariadb_client.run_statement(parser.get_sql())
 
+        display_content = {"data": {"text/html": str(result)}, "metadata": {}}
+
+        self._execute_magics(parser.get_magics(), display_content)
+
         if not silent:
-            display_content = {"data": {"text/html": str(result)}, "metadata": {}}
             self.send_response(self.iopub_socket, "display_data", display_content)
 
         return {

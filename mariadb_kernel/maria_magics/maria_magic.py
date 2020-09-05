@@ -5,9 +5,16 @@
 
 
 class MariaMagic:
-    def execute(self, args):
+    def execute(self, data, result_dict):
         """Executes a magic command.
         **Subclasses must define this method**
-        Args: args
+        Args: result_dict
+              data
         """
+        raise NotImplementedError()
+
+    def type(self):
+        raise NotImplementedError()
+
+    def name(self):
         raise NotImplementedError()
