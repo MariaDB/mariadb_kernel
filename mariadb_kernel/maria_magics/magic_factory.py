@@ -21,8 +21,3 @@ class MagicFactory:
         magic_type = self.supported_magics[magic_cmd]
         return magic_type(args)
 
-class ErrorMagic(MariaMagic):
-    def execute(self, result_dict, data):
-        #TODO: it needs to alter result_dict so that it shows an error
-        pass
-

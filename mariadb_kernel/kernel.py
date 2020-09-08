@@ -14,6 +14,7 @@ from mariadb_kernel.maria_magics.maria_magic import MariaMagic
 import logging
 import pexpect
 import re
+import pandas
 
 
 class MariaDBKernel(Kernel):
@@ -32,6 +33,9 @@ class MariaDBKernel(Kernel):
         self.client_config = ClientConfig(self.log)
         self.mariadb_client = MariaDBClient(self.log, self.client_config)
         self.mariadb_server = None
+        self.data = {
+            "last_select": pandas.DataFrame([])
+        }
 
         try:
             self.mariadb_client.start()
@@ -51,13 +55,17 @@ class MariaDBKernel(Kernel):
             self.mariadb_client.start()
 
 
-    def _execute_magics(self, magics, result_dict):
-        # TODO: implement execution of magics
-        self.log.error(f"########## parsed magics: {magics}")
-
+    def _execute_magics(self, magics):
         for magic in magics:
-            magic.execute(result_dict, None)
+            magic.execute(self, self.data)
 
+    def _update_data(self, result_html):
+        if not result_html or not result_html.startswith('<TABLE'):
+            return
+
+        # TODO: this introduces a 'pandas' + 'lxml' dependency
+        df = pandas.read_html(result_html)
+        self.data["last_select"] = df[0]
 
     def do_execute(
         self, code, silent, store_history=True, user_expressions=None, allow_stdin=False
@@ -66,12 +74,14 @@ class MariaDBKernel(Kernel):
 
         result = self.mariadb_client.run_statement(parser.get_sql())
 
-        display_content = {"data": {"text/html": str(result)}, "metadata": {}}
+        self._update_data(result)
 
-        self._execute_magics(parser.get_magics(), display_content)
+        display_content = {"data": {"text/html": str(result)}, "metadata": {}}
 
         if not silent:
             self.send_response(self.iopub_socket, "display_data", display_content)
+
+        self._execute_magics(parser.get_magics())
 
         return {
             "status": "ok",
