@@ -40,6 +40,14 @@ class MariaDBClient:
 
         self.prompt = re.compile(r"MariaDB \[.*\]>[ \t]")
         self.log = log
+        self.error = False
+        self.errormsg = ""
+
+    def iserror(self):
+        return self.error
+
+    def error_message(self):
+        return self.errormsg
 
     def _launch_client(self):
         self.maria_repl = MariaREPL(
@@ -103,6 +111,12 @@ class MariaDBClient:
                 f"Reading from the client timed out: {e}"
             )
             # TODO: attempt to rerun the cmd and raise exception if failure
+
+        if result.startswith('ERROR'):
+            self.error = True
+            self.errormsg = result
+        else:
+            self.error = False
 
         return result
 

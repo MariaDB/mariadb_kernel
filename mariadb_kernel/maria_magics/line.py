@@ -19,7 +19,6 @@ class Line(LineMagic):
         return 'line'
 
     def execute(self, kernel, data):
-        message = {'name': 'stderr', 'text': ''}
         image_name = 'last_select.png'
         df = data['last_select']
 
@@ -27,8 +26,8 @@ class Line(LineMagic):
         # containing a %line magic, but kernel has no SELECT result stored
         # because there is no query executed in this session
         if df.empty:
-            message['text'] = 'There is no query previously executed. No data to plot'
-            kernel.send_response(kernel.iopub_socket, 'stream', message)
+            err = 'There is no query previously executed. No data to plot'
+            kernel._send_error(err)
             return
 
         try:
@@ -37,8 +36,7 @@ class Line(LineMagic):
             if self.args:
                 df = df[self.columns]
         except KeyError as e:
-            message['text'] = str(e)
-            kernel.send_response(kernel.iopub_socket, 'stream', message)
+            kernel._send_error(str(e))
             return
 
         df.plot()

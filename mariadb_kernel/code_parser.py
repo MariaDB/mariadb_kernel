@@ -17,7 +17,7 @@ class CodeParser:
     def __init__(self, log, cell_code):
         self.code = cell_code
         self.magics = []
-        self.sql = ""
+        self.sql = []
         self.log = log
         self.magic_factory = MagicFactory(log)
         self._parse()
@@ -68,7 +68,7 @@ class CodeParser:
             if j == len(lines):
                 raise ValueError("No delimiter was found in the SQL code")
 
-            self.sql += code
+            self.sql.append(code)
             i = j + 1
 
         for line in magic_lines:

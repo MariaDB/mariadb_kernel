@@ -67,19 +67,27 @@ class MariaDBKernel(Kernel):
         df = pandas.read_html(result_html)
         self.data["last_select"] = df[0]
 
+    def _send_error(self, message):
+        error = {'name': 'stderr', 'text': message + '\n'}
+        self.send_response(self.iopub_socket, 'stream', error)
+
+
     def do_execute(
         self, code, silent, store_history=True, user_expressions=None, allow_stdin=False
     ):
         parser = CodeParser(self.log, code)
 
-        result = self.mariadb_client.run_statement(parser.get_sql())
+        statements = parser.get_sql()
+        for s in statements:
+            result = self.mariadb_client.run_statement(s)
+            if self.mariadb_client.iserror():
+                self._send_error(self.mariadb_client.error_message())
+                continue
 
-        self._update_data(result)
-
-        display_content = {"data": {"text/html": str(result)}, "metadata": {}}
-
-        if not silent:
-            self.send_response(self.iopub_socket, "display_data", display_content)
+            self._update_data(result)
+            display_content = {"data": {"text/html": str(result)}, "metadata": {}}
+            if not silent:
+                self.send_response(self.iopub_socket, "display_data", display_content)
 
         self._execute_magics(parser.get_magics())
 
