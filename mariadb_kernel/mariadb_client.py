@@ -33,7 +33,7 @@ class MariaREPL(replwrap.REPLWrapper):
 class MariaDBClient:
     def __init__(self, log, config):
         self.maria_repl = None
-        client_bin = "mariadb"
+        client_bin = config.client_bin()
         kernel_args = "-s -H"
         args = config.get_args()
         self.cmd = f"{client_bin} {kernel_args} {args}"

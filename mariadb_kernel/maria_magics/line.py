@@ -3,7 +3,6 @@
 # Copyright (c) MariaDB Foundation.
 # Distributed under the terms of the Modified BSD License.
 from mariadb_kernel.maria_magics.line_magic import LineMagic
-from mariadb_kernel.maria_magics.maria_magic import MagicException
 
 
 import base64

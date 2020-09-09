@@ -48,7 +48,7 @@ class MariaDBKernel(Kernel):
 
             # Start a single MariaDB server for a better experience
             # if user wants to quickly test the kernel
-            self.mariadb_server = MariaDBServer(self.log)
+            self.mariadb_server = MariaDBServer(self.log, self.client_config)
             self.mariadb_server.start()
 
             # Reconnect the client now that the server is up

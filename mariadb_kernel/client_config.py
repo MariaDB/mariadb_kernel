@@ -16,7 +16,9 @@ class ClientConfig:
             "host": "localhost",
             "port": "3306",
             "password": "",
-            "start_server": "True"
+            "start_server": "True",
+            "client_bin": "mariadb",
+            "server_bin": "mariadbd"
         }
 
         self._load_config()
@@ -76,3 +78,10 @@ class ClientConfig:
 
     def start_server(self):
         return self.default_config['start_server'] == "True"
+
+    def client_bin(self):
+        return self.default_config['client_bin']
+
+    def server_bin(self):
+        return self.default_config['server_bin']
+

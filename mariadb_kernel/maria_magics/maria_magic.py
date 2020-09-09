@@ -9,7 +9,6 @@ class MariaMagic:
         """Executes a magic command.
         **Subclasses must define this method**
         Args: kernel
-              result_dict
               data
         """
         raise NotImplementedError()
@@ -20,5 +19,3 @@ class MariaMagic:
     def name(self):
         raise NotImplementedError()
 
-class MagicException(Exception):
-    pass

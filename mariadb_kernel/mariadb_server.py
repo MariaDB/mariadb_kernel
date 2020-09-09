@@ -14,12 +14,14 @@ import signal
 import time
 
 class MariaDBServer:
-    def __init__(self, log):
+    def __init__(self, log, config):
         self.log = log
+        self.config = config
 
     def start(self):
+        server_bin = self.config.server_bin()
         self.server = subprocess.Popen(
-                ["mariadbd"], stdout = subprocess.PIPE,
+                [server_bin], stdout = subprocess.PIPE,
                 stderr = subprocess.PIPE)
 
         self._wait_server(self.server.stderr, b"mariadbd: ready for connections")
