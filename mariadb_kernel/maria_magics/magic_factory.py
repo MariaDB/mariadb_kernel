@@ -4,13 +4,15 @@
 # Distributed under the terms of the Modified BSD License.
 
 from mariadb_kernel.maria_magics.line import Line
+from mariadb_kernel.maria_magics.df import DF
 from mariadb_kernel.maria_magics.maria_magic import MariaMagic
 
 class MagicFactory:
     def __init__(self, log):
         self.log = log
         self.supported_magics = {
-            "line": Line
+            "line": Line,
+            "df": DF
         }
 
     def create_magic(self, magic_cmd, args):

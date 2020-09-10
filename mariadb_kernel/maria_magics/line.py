@@ -43,7 +43,7 @@ class Line(LineMagic):
         # because there is no query executed in this session
         if df.empty:
             err = 'There is no query previously executed. No data to plot'
-            kernel._send_error(err)
+            kernel._send_message('stderr', err)
             return
 
         try:
@@ -52,7 +52,7 @@ class Line(LineMagic):
             if self.args:
                 df = df[self.columns]
         except KeyError as e:
-            kernel._send_error(str(e))
+            kernel._send_message('stderr', str(e))
             return
 
         df.plot()
