@@ -1,4 +1,21 @@
-"""TODO"""
+"""This class implements the %line magic command"""
+
+"""
+The %line magic command has the following syntax:
+    > %line [column1, column2,...]
+
+The whole purpose of this magic command is to allow the user to display
+the result of the last query (e.g. SELECT, SHOW,...) in a nice and simple
+matplotlib plot.
+
+If no arguments are specified, a plot of all the columns in the result set
+is displayed. But sometimes this is not necessary, so users have the ability
+to specify the columns of the result that the kernel should use for plotting.
+
+Internally, the Line class receives the data of the last query from the kernel
+as a Pandas DataFrame, it generates a plot PNG image, wraps the image into
+a nice display_data Jupyter message and then sends it further.
+"""
 
 # Copyright (c) MariaDB Foundation.
 # Distributed under the terms of the Modified BSD License.
