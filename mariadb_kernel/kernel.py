@@ -63,7 +63,6 @@ class MariaDBKernel(Kernel):
         if not result_html or not result_html.startswith('<TABLE'):
             return
 
-        # TODO: this introduces a 'pandas' + 'lxml' dependency
         df = pandas.read_html(result_html)
         self.data["last_select"] = df[0]
 

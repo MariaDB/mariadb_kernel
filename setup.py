@@ -20,9 +20,8 @@ setup(
     author='MariaDB Foundation',
     author_email='foundation@mariadb.org',
     url='https://github.com/MariaDB/mariadb_kernel',
-    install_requires=[
-        'jupyter_client', 'IPython', 'ipykernel'
-    ],
+    install_requires=open("requirements.txt").read().splitlines(),
+    python_requires=">=3.5",
     classifiers=[
         'License :: OSI Approved :: BSD License',
         'Programming Language :: Python :: 3',
