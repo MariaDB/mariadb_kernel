@@ -1,6 +1,6 @@
 """This class implements the %df magic command"""
 
-"""
+help_text = """
 The %df magic command has the following syntax:
     > %df [filename]
 
@@ -28,7 +28,10 @@ class DF(LineMagic):
             self.filename = filename
 
     def name(self):
-        return 'df'
+        return '%df'
+
+    def help(self):
+        return help_text
 
     def execute(self, kernel, data):
         df = data['last_select']

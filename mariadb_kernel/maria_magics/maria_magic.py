@@ -19,3 +19,7 @@ class MariaMagic:
     def name(self):
         raise NotImplementedError()
 
+    def help(self):
+        raise NotImplementedError()
+
+

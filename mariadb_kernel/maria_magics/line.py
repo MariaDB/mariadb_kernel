@@ -1,6 +1,6 @@
 """This class implements the %line magic command"""
 
-"""
+help_text = """
 The %line magic command has the following syntax:
     > %line [column1, column2,...]
 
@@ -32,7 +32,10 @@ class Line(LineMagic):
         self.columns = args.split(' ')
 
     def name(self):
-        return 'line'
+        return '%line'
+
+    def help(self):
+        return help_text
 
     def execute(self, kernel, data):
         image_name = 'last_select.png'
