@@ -22,7 +22,7 @@ def install_my_kernel_spec(user=True, prefix=None):
 
         print("Installing Jupyter kernel spec")
         KernelSpecManager().install_kernel_spec(
-            td, "mariadb_kernel", user=user, replace=True, prefix=prefix
+            td, "mariadb_kernel", user=user, prefix=prefix
         )
 
 
