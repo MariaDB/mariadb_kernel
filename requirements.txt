@@ -3,3 +3,4 @@ pandas
 json2html
 matplotlib
 lxml
+setuptools
