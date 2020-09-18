@@ -25,7 +25,9 @@ class MariaREPL(replwrap.REPLWrapper):
         self._expect_prompt(timeout, async_)
 
         lines = self.child.before.split("\r\n")
-        result = lines[1]
+        result = lines[0]
+        if len(lines) > 1:
+            result = lines[1]
 
         return result
 
