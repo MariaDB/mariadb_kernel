@@ -1,10 +1,11 @@
-"""The code that wraps a MariaDB command line client"""
+"""The code that wraps a MariaDB command-line client."""
 
 # Copyright (c) MariaDB Foundation.
 # Distributed under the terms of the Modified BSD License.
 
-from pexpect import replwrap, EOF, TIMEOUT, ExceptionPexpect
 import re
+
+from pexpect import EOF, ExceptionPexpect, replwrap, TIMEOUT
 
 
 class MariaREPL(replwrap.REPLWrapper):
@@ -65,10 +66,10 @@ class MariaDBClient:
             self.log.error("MariaDB client failed to start")
 
             if "Access denied for user" in e.value:
-                self.log.error("The credentials used for connecting are wrong")
+                self.log.error("The provided connection credentials are incorrect")
                 raise LoginError()
 
-            self.log.error("Most probably the MariaDB server is not started")
+            self.log.error("Most likely the MariaDB server is not running")
             assert "Can't connect" in e.value
 
             # Let the kernel know the server is down
@@ -78,11 +79,11 @@ class MariaDBClient:
             self.log.error(f"Retrying")
 
             # If client fails again, exception should be propagated upwards
-            # so that the kernel can fail
+            # so the kernel can fail
             self._launch_client()
 
     def stop(self):
-        if self.maria_repl is None:
+        if not self.maria_repl:
             return
 
         # pexpect will always raise EOF because the mariadb client exits,
