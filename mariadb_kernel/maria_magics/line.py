@@ -58,6 +58,7 @@ class Line(LineMagic):
             kernel._send_message('stderr', str(e))
             return
 
+        df = df.set_index(df.columns[0])
         df.plot()
         pyplot.savefig(image_name)
 
