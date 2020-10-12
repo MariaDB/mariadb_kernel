@@ -69,7 +69,6 @@ class MariaDBClient:
                 raise LoginError()
 
             self.log.error("Most probably the MariaDB server is not started")
-            assert "Can't connect" in e.value
 
             # Let the kernel know the server is down
             raise ServerIsDownError()
