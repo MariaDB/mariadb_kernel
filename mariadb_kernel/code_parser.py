@@ -11,7 +11,7 @@ their duties.
 # Copyright (c) MariaDB Foundation.
 # Distributed under the terms of the Modified BSD License.
 
-from mariadb_kernel.maria_magics.magic_factory import MagicFactory
+import mariadb_kernel.maria_magics.magic_factory as magic_factory
 
 class CodeParser:
     def __init__(self, log, cell_code):
@@ -19,7 +19,7 @@ class CodeParser:
         self.magics = []
         self.sql = []
         self.log = log
-        self.magic_factory = MagicFactory(log)
+        self.magic_factory = magic_factory.MagicFactory(log)
         self._parse()
 
     def get_sql(self):
