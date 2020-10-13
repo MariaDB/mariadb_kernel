@@ -9,8 +9,7 @@ supported by the kernel. It also prints the help text for each command
 # Distributed under the terms of the Modified BSD License.
 
 from mariadb_kernel.maria_magics.line_magic import LineMagic
-import mariadb_kernel.maria_magics.magic_factory as magic_factory
-
+import mariadb_kernel.maria_magics.supported_magics
 
 import os
 from json2html import *
@@ -27,7 +26,7 @@ class LSMagic(LineMagic):
 
     def execute(self, kernel, data):
         result = { 'Line': [], 'Cell':[] }
-        magics = magic_factory.MagicFactory.magics()
+        magics = supported_magics.get()
         for name, magic_type in magics.items():
             m = magic_type('')
             entry = {
