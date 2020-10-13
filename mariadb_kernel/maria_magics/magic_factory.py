@@ -4,7 +4,7 @@
 # Distributed under the terms of the Modified BSD License.
 
 from mariadb_kernel.maria_magics.maria_magic import MariaMagic
-import mariadb_kernel.maria_magics.supported_magics
+from mariadb_kernel.maria_magics import supported_magics
 
 class MagicFactory:
     def __init__(self, log):

@@ -24,7 +24,6 @@ class MariaDBServer:
 
     def start(self):
         server_bin = self.config.server_bin()
-        self.log.error("###Subprocess launched")
         self.server = subprocess.Popen(
                 [server_bin], stdout = subprocess.PIPE,
                 stderr = subprocess.PIPE,
@@ -32,9 +31,7 @@ class MariaDBServer:
 
 
         msg = f"{self.server_name}: ready for connections"
-        self.log.error(f"###waiting for server, msg: {msg}")
         self._wait_server(self.server.stderr, msg)
-        self.log.error(f"###done waiting")
         self.log.info("Started MariaDB server successfully")
 
     def stop(self):

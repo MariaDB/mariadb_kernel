@@ -9,7 +9,7 @@ supported by the kernel. It also prints the help text for each command
 # Distributed under the terms of the Modified BSD License.
 
 from mariadb_kernel.maria_magics.line_magic import LineMagic
-import mariadb_kernel.maria_magics.supported_magics
+from mariadb_kernel.maria_magics import supported_magics
 
 import os
 from json2html import *
@@ -36,7 +36,6 @@ class LSMagic(LineMagic):
             result[m.type()].append(entry)
 
         html = json2html.convert(json=result)
-        kernel.log.error(html)
 
         # TODO: this is a hack, we should find some other solution for altering
         # the table elements styling
