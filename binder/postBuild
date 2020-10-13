@@ -1,0 +1,8 @@
+set -ex
+
+mkdir datadir
+mysql_install_db --user=jovyan --datadir=./datadir --auth-root-authentication-method=normal
+cp binder/.my.cnf ~/
+
+python -m mariadb_kernel.install
+
