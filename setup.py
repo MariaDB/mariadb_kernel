@@ -1,6 +1,7 @@
 import os
 
 from distutils.core import setup
+from setuptools import find_packages
 
 with open('README.md') as f:
     readme = f.read()
@@ -14,7 +15,7 @@ with open(os.path.join(here, 'mariadb_kernel', '_version.py')) as f:
 setup(
     name='mariadb_kernel',
     version=version_ns['__version__'],
-    packages=['mariadb_kernel'],
+    packages=find_packages(),
     description='A simple MariaDB Jupyter kernel',
     long_description=readme,
     author='MariaDB Foundation',
