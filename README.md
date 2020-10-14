@@ -19,7 +19,7 @@ all you need to do is:
 
 1. Clone the repo:
 ```bash
-git clone https://github.com/robertbindar/mariadb_kernel.git
+git clone https://github.com/MariaDB/mariadb_kernel.git
 ```
 
 2. Move into the repository dir and pip install the package:
@@ -37,7 +37,7 @@ python -m mariadb_kernel.install
 1. Clone the repo:
 
 ```bash
-git clone https://github.com/robertbindar/mariadb_kernel.git
+git clone https://github.com/MariaDB/mariadb_kernel.git
 ```
 
 2. Download and install [miniconda](https://docs.conda.io/en/latest/miniconda.html):
@@ -60,7 +60,7 @@ conda install -c conda-forge jupyterlab
 ```
 6. Clone the repo and install the kernel:
 ```bash
-git clone https://github.com/robertbindar/mariadb_kernel.git
+git clone https://github.com/MariaDB/mariadb_kernel.git
 pip install .
 python -m mariadb_kernel.install
 ```
