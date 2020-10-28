@@ -84,10 +84,13 @@ Config example:
 ```bash
 cat ~/.jupyter/mariadb_config.json
 {
-    "user": "robert",
+    "user": "root",
     "host": "localhost",
     "port": "3306",
-    "password": "securepassword"
+    "password": "securepassword",
+    "start_server": "True",
+    "client_bin": "/usr/bin/mariadb",
+    "server_bin": "/usr/bin/mariadbd"
 }
 ```
 
