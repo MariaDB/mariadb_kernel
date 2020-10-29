@@ -22,9 +22,9 @@ all you need to do is:
 git clone https://github.com/MariaDB/mariadb_kernel.git
 ```
 
-2. Move into the repository dir and pip install the package:
+2. Move into the repository dir and build the package:
 ```bash
-pip install .
+python setup.py develop
 ```
 
 3. Install the Jupyter kernelspec so the kernel becomes visible for Jupyter
@@ -61,7 +61,7 @@ conda install -c conda-forge jupyterlab
 6. Clone the repo and install the kernel:
 ```bash
 git clone https://github.com/MariaDB/mariadb_kernel.git
-pip install .
+python setup.py develop
 python -m mariadb_kernel.install
 ```
 
