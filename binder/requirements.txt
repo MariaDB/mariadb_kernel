@@ -1,0 +1,2 @@
+git+https://github.com/MariaDB/mariadb_kernel.git
+

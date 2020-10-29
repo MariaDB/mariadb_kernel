@@ -26,9 +26,13 @@ class MariaREPL(replwrap.REPLWrapper):
         self._expect_prompt(timeout, async_)
 
         lines = self.child.before.split("\r\n")
-        result = lines[1]
 
-        return result
+        # In pre-10.5 versions, silent mode doesn't print the SQL statement
+        # before the result set
+        if code.strip() == lines[0].strip():
+            return lines[1]
+
+        return lines[0]
 
 
 class MariaDBClient:
@@ -70,7 +74,6 @@ class MariaDBClient:
                 raise LoginError()
 
             self.log.error("Most likely the MariaDB server is not running")
-            assert "Can't connect" in e.value
 
             # Let the kernel know the server is down
             raise ServerIsDownError()

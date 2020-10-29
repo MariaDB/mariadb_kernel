@@ -1,20 +1,13 @@
 import os
 
-from distutils.core import setup
+from setuptools import find_packages, setup
 
 with open('README.md') as f:
     readme = f.read()
 
-# Get the current package version.
-here = os.path.abspath(os.path.dirname(__file__))
-version_ns = {}
-with open(os.path.join(here, 'mariadb_kernel', '_version.py')) as f:
-        exec(f.read(), {}, version_ns)
-
 setup(
     name='mariadb_kernel',
-    version=version_ns['__version__'],
-    packages=['mariadb_kernel'],
+    packages=find_packages(),
     description='A simple MariaDB Jupyter kernel',
     long_description=readme,
     author='MariaDB Foundation',
@@ -26,4 +19,9 @@ setup(
         'License :: OSI Approved :: BSD License',
         'Programming Language :: Python :: 3',
     ],
+    use_scm_version={
+        'version_scheme': 'guess-next-dev',
+        'local_scheme': 'dirty-tag',
+        'write_to': 'mariadb_kernel/_version.py'
+    },
 )

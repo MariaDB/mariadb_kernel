@@ -9,3 +9,6 @@ __pycache__/
 # Vim
 *.swp
 *.swo
+
+# Ignore auto-updated version file
+mariadb_kernel/_version.py

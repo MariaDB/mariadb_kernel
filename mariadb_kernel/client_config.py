@@ -17,8 +17,8 @@ class ClientConfig:
             "port": "3306",
             "password": "",
             "start_server": "True",
-            "client_bin": "mariadb",
-            "server_bin": "mariadbd"
+            "client_bin": "mysql",
+            "server_bin": "mysqld"
         }
 
         self._load_config()
