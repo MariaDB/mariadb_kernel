@@ -37,10 +37,10 @@ class MariaREPL(replwrap.REPLWrapper):
 class MariaDBClient:
     def __init__(self, log, config):
         self.maria_repl = None
-        client_bin = config.client_bin()
+        self.client_bin = config.client_bin()
         kernel_args = "-s -H"
         args = config.get_args()
-        self.cmd = f"{client_bin} {kernel_args} {args}"
+        self.cmd = f"{self.client_bin} {kernel_args} {args}"
 
         self.prompt = re.compile(r"MariaDB \[.*\]>[ \t]")
         self.log = log
@@ -77,12 +77,9 @@ class MariaDBClient:
             # Let the kernel know the server is down
             raise ServerIsDownError()
         except ExceptionPexpect as e:
-            self.log.error(f"MariaDB client failed to start: {e}")
-            self.log.error(f"Retrying")
-
-            # If client fails again, exception should be propagated upwards
-            # so that the kernel can fail
-            self._launch_client()
+            self.log.error("No mariadb> command line client found at "
+                           f"{self.client_bin};")
+            self.log.error("Please install MariaDB from mariadb.org/download")
 
     def stop(self):
         if self.maria_repl is None:
