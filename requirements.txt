@@ -1,4 +1,3 @@
-jupyterlab
 pandas
 json2html
 matplotlib
