@@ -21,18 +21,28 @@ class MariaDBServer:
         server_bin = config.server_bin()
         # server_bin can either be an absolute path or just the name of the bin
         self.server_name = server_bin.split('/')[-1]
+        self.server_up = False
 
     def start(self):
         server_bin = self.config.server_bin()
-        self.server = subprocess.Popen(
-                [server_bin], stdout = subprocess.PIPE,
-                stderr = subprocess.PIPE,
-                universal_newlines=True)
+        try:
+            self.server = subprocess.Popen(
+                    [server_bin], stdout = subprocess.PIPE,
+                    stderr = subprocess.PIPE,
+                    universal_newlines=True)
+        except FileNotFoundError:
+            self.log.error(f"No MariaDB Server found at {server_bin};")
+            self.log.error("Please install MariaDB from mariadb.org/download")
+            self.log.error("If this is on purpose, you are limited to "
+                           "connecting to remote databases only")
+            return
+
 
 
         msg = f"{self.server_name}: ready for connections"
         self._wait_server(self.server.stderr, msg)
         self.log.info("Started MariaDB server successfully")
+        self.server_up = True
 
     def stop(self):
         self.server.send_signal(signal.SIGQUIT)
@@ -45,3 +55,6 @@ class MariaDBServer:
             line = stream.readline()
             if msg in line:
                 return
+
+    def is_up(self):
+        return self.server_up

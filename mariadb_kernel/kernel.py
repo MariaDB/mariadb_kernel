@@ -52,7 +52,8 @@ class MariaDBKernel(Kernel):
             self.mariadb_server.start()
 
             # Reconnect the client now that the server is up
-            self.mariadb_client.start()
+            if self.mariadb_server.is_up():
+                self.mariadb_client.start()
 
 
     def _execute_magics(self, magics):
