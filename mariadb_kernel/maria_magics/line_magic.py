@@ -76,6 +76,18 @@ class LineMagic(MariaMagic):
         # Override the plot kind in case the user passes this option
         d['kind'] = plot_type
 
+        # Because the DataFrame.plot.pie function only takes the 'y' axis as
+        # option, let's offer users the possibility to specify the index of
+        # the dataframe (which .pie() will use by default as the 'x' axis)
+        # like they could customize it using DataFrame.set_index() from Python
+        if plot_type == 'pie' and 'index' in d:
+            try:
+                df = df.set_index(d['index'])
+            except KeyError:
+                kernel._send_message('stderr', 'Index does not exist')
+                return
+            d.pop('index', None)
+
         try:
             df.plot(**d)
         except (ValueError, AttributeError, TypeError) as e:
