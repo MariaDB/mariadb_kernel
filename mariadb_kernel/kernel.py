@@ -75,7 +75,19 @@ class MariaDBKernel(Kernel):
     def do_execute(
         self, code, silent, store_history=True, user_expressions=None, allow_stdin=False
     ):
-        parser = CodeParser(self.log, code)
+        rv = {
+            "status": "ok",
+            # The base class increments the execution count
+            "execution_count": self.execution_count,
+            "payload": [],
+            "user_expressions": {},
+        }
+
+        try:
+            parser = CodeParser(self.log, code)
+        except ValueError as e:
+            self._send_message('stderr', str(e))
+            return rv
 
         statements = parser.get_sql()
         for s in statements:
@@ -91,13 +103,7 @@ class MariaDBKernel(Kernel):
 
         self._execute_magics(parser.get_magics())
 
-        return {
-            "status": "ok",
-            # The base class increments the execution count
-            "execution_count": self.execution_count,
-            "payload": [],
-            "user_expressions": {},
-        }
+        return rv
 
     def do_shutdown(self, restart):
         self.mariadb_client.stop()
