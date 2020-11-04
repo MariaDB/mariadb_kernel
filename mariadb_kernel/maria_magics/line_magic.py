@@ -11,6 +11,84 @@ it only sees what is passed as arguments, e.g. '%magic arg1 arg2'
 
 from mariadb_kernel.maria_magics.maria_magic import MariaMagic
 
+import base64
+from distutils import util
+from matplotlib import pyplot
+import os
+import shlex
+
 class LineMagic(MariaMagic):
     def type(self):
         return "Line"
+
+    """
+    Casts a string to int, float, bool or return the input string
+    """
+    def _str_to_obj(self, s):
+        try:
+            return int(s)
+        except ValueError:
+            try:
+                return float(s)
+            except ValueError:
+                pass
+
+        try:
+            return bool(util.strtobool(s))
+        except ValueError:
+            return s
+
+
+    """
+    Gets a string of "key=value" space-separated arguments
+    (e.g. input="kind="hist" bins=8 alpha=0.3")
+    and parses it into a Python dict.
+    """
+    def parse_args(self, input):
+        d = dict(token.split('=') for token in shlex.split(input))
+        for k,v in d.items():
+            d[k] = self._str_to_obj(v)
+
+        return d
+
+    def generate_plot(self, kernel, data, plot_type):
+        image_name = 'last_select.png'
+        df = data['last_select']
+                # Override the plot kind in case the user passes this option
+
+        # When opening an existing notebook, the user can execute a cell
+        # containing a magic command, but kernel has no SELECT result stored
+        # because there is no query executed in this session
+        if df.empty:
+            err = 'There is no query previously executed. No data to plot'
+            kernel._send_message('stderr', err)
+            return
+
+        try:
+            d = self.parse_args(self.args)
+        except ValueError:
+            kernel._send_message(
+                'stderr',
+                "There was an error while parsing the arguments. "
+                "Please check %lsmagic on how to use the magic command")
+            return
+
+        # Override the plot kind in case the user passes this option
+        d['kind'] = plot_type
+
+        try:
+            df.plot(**d)
+        except (ValueError, AttributeError, TypeError) as e:
+            kernel._send_message('stderr', str(e))
+            return
+
+        pyplot.savefig(image_name)
+
+        with open(image_name, 'rb') as f:
+            img = f.read()
+            image = base64.b64encode(img).decode('ascii')
+
+            display_content = {"data": {"image/png": image}, "metadata": {}}
+            kernel.send_response(kernel.iopub_socket, "display_data", display_content)
+
+        os.unlink(image_name)
