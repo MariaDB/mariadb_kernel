@@ -13,14 +13,15 @@ class MagicFactory:
     def create_magic(self, magic_cmd, args):
         magics = supported_magics.get()
         if not magic_cmd in magics:
-            self.log.info(f"The %{magic_cmd} magic command does not exist")
-            return ErrorMagic()
+            return ErrorMagic(magic_cmd)
 
         magic_type = magics[magic_cmd]
         return magic_type(args)
 
 class ErrorMagic(MariaMagic):
+    def __init__(self, name):
+        self.name = name
     def execute(self, kernel, data):
-        #TODO: it needs to alter result_dict so that it shows an error
-        pass
+        msg = f'The %{self.name} magic command does not exist'
+        kernel._send_message('stderr', msg)
 
