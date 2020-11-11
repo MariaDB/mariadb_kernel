@@ -24,4 +24,5 @@ setup(
         'local_scheme': 'dirty-tag',
         'write_to': 'mariadb_kernel/_version.py'
     },
+    setup_requires=['setuptools_scm'],
 )
