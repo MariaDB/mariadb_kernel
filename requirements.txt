@@ -4,3 +4,5 @@ matplotlib
 lxml
 setuptools
 setuptools-scm
+pytest
+black
