@@ -16,7 +16,7 @@ jobs:
 
     services:
       mariadb-server:
-        image: mariadb:10.5
+        image: mariadb:10.1
         ports:
           - 3306:3306
 
