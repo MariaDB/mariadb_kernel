@@ -14,6 +14,12 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    services:
+      mariadb-server;
+        image: mariadb:10.5
+        ports:
+          3306:3306
+
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python 3.8
@@ -26,10 +32,6 @@ jobs:
         pip install -r dev-requirements.txt
         python setup.py develop
         pip freeze
-    - name: Install MariaDB
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y mariadb-server
 
     - name: Test with pytest
       run: |
