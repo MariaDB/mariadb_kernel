@@ -12,9 +12,6 @@ on:
 jobs:
   tests:
     runs-on: ubuntu-latest
-
-  container:
-    runs-on: ubuntu-latest
     container: mariadb:10.5
     steps:
     - uses: actions/checkout@v2
