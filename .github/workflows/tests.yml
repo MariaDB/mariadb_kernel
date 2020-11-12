@@ -16,12 +16,14 @@ jobs:
 
     services:
       mariadb-server:
-        image: mariadb:10.1
+        image: mariadb:10.5
         ports:
           - 3306:3306
 
     steps:
     - uses: actions/checkout@v2
+    - name:
+      run: telnet localhost 3306
     - name: Set up Python 3.8
       uses: actions/setup-python@v2
       with:
