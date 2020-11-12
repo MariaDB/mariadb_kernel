@@ -47,25 +47,34 @@ class CodeParser:
         return self.magic_factory.create_magic(magic_cmd, args)
 
     def _parse(self):
-        lines = self.code.split("\n")
+        lines = self.code.strip().split("\n")
         magic_lines = []
         i = 0
         while i < len(lines):
-            line = lines[i]
+            line = lines[i].strip()
+
             if self._is_magic(line):
                 magic_lines.append(line)
                 i += 1
                 continue
-            j = i
-            code = ""
-            while j < len(lines):
-                code = code + lines[j] + " "
-                if lines[j].find(";") >= 0:
-                    break
-                j += 1
 
-            # Raise an exception if no SQL delimiter was found
-            if j == len(lines):
+            code = ""
+            for j in range(i, len(lines)):
+                line = lines[j].strip()
+                if not line:
+                    continue
+
+                # Finding a magic command in the middle of the sentence
+                # is wrong, we can assume the user forgot to add the delimiter
+                if self._is_magic(line):
+                    raise ValueError("No delimiter was found in the SQL code")
+
+                code = code + line + " "
+                if line.find(";") >= 0:
+                    break
+
+            # We reached the end of the code cell and can't find a delimiter
+            if not code.endswith("; "):
                 raise ValueError("No delimiter was found in the SQL code")
 
             self.sql.append(code)
