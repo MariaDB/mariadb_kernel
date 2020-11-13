@@ -24,6 +24,7 @@ jobs:
           DEBIAN_FRONTEND=noninteractive apt install -y libxml2-dev libxslt1-dev zlib1g-dev pkg-config
           conda env list
           conda init bash
+          source ~/.bashrc
           conda activate py38
           conda env list
           python -m pip install -r dev-requirements.txt
