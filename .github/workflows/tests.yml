@@ -12,21 +12,14 @@ on:
 jobs:
   tests:
     runs-on: ubuntu-latest
-    container: mariadb:10.5
+    container: robertbindar/mariadb_jupyter_kernel:latest
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python 3.8
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.8
-    - name: Install dependencies
-      run: |
-        apt-get update
-        apt-get install -y python-pip
-        pip install -r dev-requirements.txt
-        python setup.py develop
-        pip freeze
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: |
+          pip install -r dev-requirements.txt
+          python setup.py develop
 
-    - name: Test with pytest
-      run: |
-        pytest -v --maxfail=2 --color=yes mariadb_kernel/tests/
+      - name: Test with pytest
+        run: |
+          pytest -v --maxfail=2 --color=yes mariadb_kernel/tests/
