@@ -36,7 +36,8 @@ def server_setup():
 
     cnfpath = Path.home().joinpath('.my.cnf')
     backup = Path.home().joinpath('mycnf_backup')
-    backup.replace(cnfpath)
+    if backup.exists():
+        backup.replace(cnfpath)
     shutil.rmtree('/tmp/datadir-test')
 
 
