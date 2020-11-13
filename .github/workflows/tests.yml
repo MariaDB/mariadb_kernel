@@ -32,5 +32,7 @@ jobs:
 
       - name: Test with pytest
         run: |
+          conda init bash
+          source ~/.bashrc
           conda activate py38
           pytest -v --maxfail=2 --color=yes mariadb_kernel/tests/
