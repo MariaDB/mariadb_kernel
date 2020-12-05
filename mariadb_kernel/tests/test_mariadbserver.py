@@ -27,9 +27,13 @@ def test_mariadb_server_starts_mysqld_correctly():
 
     mocklog.info.assert_any_call("Started MariaDB server successfully")
 
+    assert server.is_up() == True
+
     # Throws CalledProcessError when return value of pidof is non-zero
     check_output(["pidof", 'mysqld'])
 
     server.stop()
     mocklog.info.assert_any_call("Stopped MariaDB server successfully")
+
+    assert server.is_up() == False
 
