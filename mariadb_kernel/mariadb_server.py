@@ -49,6 +49,7 @@ class MariaDBServer:
         msg = f"{self.server_name}: Shutdown complete"
         self._wait_server(self.server.stderr, msg)
         self.log.info("Stopped MariaDB server successfully")
+        self.server_up = False
 
     def _wait_server(self, stream, msg):
         while True:
