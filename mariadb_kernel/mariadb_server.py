@@ -45,6 +45,9 @@ class MariaDBServer:
         self.server_up = True
 
     def stop(self):
+        if not self.is_up():
+            return
+
         self.server.send_signal(signal.SIGQUIT)
         msg = f"{self.server_name}: Shutdown complete"
         self._wait_server(self.server.stderr, msg)
