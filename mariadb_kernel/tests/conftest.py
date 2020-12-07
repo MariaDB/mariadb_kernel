@@ -3,6 +3,7 @@ import pytest
 import shutil
 from pathlib import Path
 from subprocess import check_output
+from ..mariadb_server import MariaDBServer
 
 @pytest.fixture(scope="session", autouse=True)
 def server_setup():
@@ -39,5 +40,19 @@ def server_setup():
     if backup.exists():
         backup.replace(cnfpath)
     shutil.rmtree('/tmp/datadir-test')
+
+@pytest.fixture
+def mariadb_server():
+    server = None
+    def _server(log, config):
+        nonlocal server
+        server = MariaDBServer(log, config)
+        server.start()
+        return server
+
+    yield _server
+
+    server.stop()
+
 
 
