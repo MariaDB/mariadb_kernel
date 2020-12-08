@@ -54,5 +54,8 @@ def mariadb_server():
 
     server.stop()
 
+@pytest.fixture(params=["line", "bar", "pie", "df", "lsmagic"])
+def magic_cmd(request):
+    return request.param
 
 
