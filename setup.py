@@ -10,6 +10,7 @@ setup(
     packages=find_packages(),
     description='A simple MariaDB Jupyter kernel',
     long_description=readme,
+    long_description_content_type="text/markdown",
     author='MariaDB Foundation',
     author_email='foundation@mariadb.org',
     url='https://github.com/MariaDB/mariadb_kernel',
