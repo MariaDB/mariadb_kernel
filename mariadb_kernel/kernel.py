@@ -4,7 +4,7 @@
 
 from ipykernel.kernelbase import Kernel
 
-from mariadb_kernel._version import version as __version__
+from ._version import version as __version__
 from mariadb_kernel.client_config import ClientConfig
 from mariadb_kernel.mariadb_client import MariaDBClient, ServerIsDownError
 from mariadb_kernel.code_parser import CodeParser
