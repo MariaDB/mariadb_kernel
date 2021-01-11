@@ -67,7 +67,7 @@ Usage:
 black .
 ```
 
-For getting a sense of how the kernel looks internally, we encourage you to check the `API and Architecture` kernel documentation page on `MariaDB Knowledgebase`.
+For getting a sense of how the kernel looks internally, we encourage you to check the [Main Components and Architecture](https://mariadb.com/kb/en/the-mariadb-jupyter-kernel-main-components-and-architecture/) kernel documentation page.
 Feel free to ask questions on [Zulip](https://mariadb.zulipchat.com/#), we are here to guide you through your first contribution <3
 
 ### Adding a new magic command
