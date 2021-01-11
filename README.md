@@ -9,7 +9,9 @@
 
 # Quick Installation Steps
 
-`mariadb_kernel has been packaged for the PyPI package manager`
+`mariadb_kernel` has been packaged for the PyPI package manager,
+packaging for `conda-forge` is coming soon.
+
 Assuming you already have Jupyter Lab and MariaDB installed on your system,
 all you need to do is:
 
