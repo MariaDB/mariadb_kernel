@@ -21,5 +21,3 @@ class MariaMagic:
 
     def help(self):
         raise NotImplementedError()
-
-

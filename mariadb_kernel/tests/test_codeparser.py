@@ -5,6 +5,8 @@ from unittest.mock import patch, Mock
 from ..code_parser import CodeParser
 
 import pdb
+
+
 def test_parser_throws_when_no_delimiter_found():
     cell = "select 1"
 
@@ -34,6 +36,7 @@ def test_parser_throws_when_no_delimiter_found():
     """
     CodeParser(Mock(), cell)
 
+
 def test_parser_get_sql():
     sql = "select * from mysql.user; "
     linemagic = "%line_magic"
@@ -62,4 +65,3 @@ def test_parser_get_sql():
     statements = parser.get_sql()
     assert len(statements) == 1
     assert statements[0] == "select user,host from mysql.user where user='robert'; "
-

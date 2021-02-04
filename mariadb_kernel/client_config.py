@@ -18,7 +18,7 @@ class ClientConfig:
             "password": "",
             "start_server": "True",
             "client_bin": "mysql",
-            "server_bin": "mysqld"
+            "server_bin": "mysqld",
         }
 
         self._load_config()
@@ -77,11 +77,10 @@ class ClientConfig:
         return rv
 
     def start_server(self):
-        return self.default_config['start_server'] == "True"
+        return self.default_config["start_server"] == "True"
 
     def client_bin(self):
-        return self.default_config['client_bin']
+        return self.default_config["client_bin"]
 
     def server_bin(self):
-        return self.default_config['server_bin']
-
+        return self.default_config["server_bin"]

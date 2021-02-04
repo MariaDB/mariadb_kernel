@@ -20,6 +20,7 @@ pyplot.plot(x)
 
 from mariadb_kernel.maria_magics.maria_magic import MariaMagic
 
+
 class CellMagic(MariaMagic):
     def type(self):
         return "Cell"

@@ -77,8 +77,9 @@ class MariaDBClient:
             # Let the kernel know the server is down
             raise ServerIsDownError()
         except ExceptionPexpect as e:
-            self.log.error("No mariadb> command line client found at "
-                           f"{self.client_bin};")
+            self.log.error(
+                "No mariadb> command line client found at " f"{self.client_bin};"
+            )
             self.log.error("Please install MariaDB from mariadb.org/download")
 
     def stop(self):
@@ -96,7 +97,7 @@ class MariaDBClient:
             return ""
 
         result = ""
-        #TODO: double check exception handling
+        # TODO: double check exception handling
         try:
             result = self.maria_repl.run_command(code, timeout)
         except EOF as e:
@@ -112,7 +113,7 @@ class MariaDBClient:
             )
             # TODO: attempt to rerun the cmd and raise exception if failure
 
-        if result.startswith('ERROR'):
+        if result.startswith("ERROR"):
             self.error = True
             self.errormsg = result
         else:
@@ -120,8 +121,10 @@ class MariaDBClient:
 
         return result
 
+
 class ServerIsDownError(Exception):
     pass
+
 
 class LoginError(Exception):
     pass

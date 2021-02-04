@@ -37,4 +37,3 @@ SHELL ["/bin/bash", "-c"]
 RUN echo "source /root/miniconda/etc/profile.d/conda.sh && conda activate py38" >> ~/.bashrc
 
 RUN python3 -m pip install notebook jupyterlab
-

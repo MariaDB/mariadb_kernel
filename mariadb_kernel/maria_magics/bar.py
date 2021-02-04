@@ -23,17 +23,15 @@ a nice display_data Jupyter message and then sends it further.
 from mariadb_kernel.maria_magics.line_magic import LineMagic
 
 
-
 class Bar(LineMagic):
     def __init__(self, args):
         self.args = args
 
     def name(self):
-        return '%bar'
+        return "%bar"
 
     def help(self):
         return help_text
 
     def execute(self, kernel, data):
-        self.generate_plot(kernel, data, 'bar')
-
+        self.generate_plot(kernel, data, "bar")

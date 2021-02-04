@@ -10,12 +10,6 @@ from mariadb_kernel.maria_magics.maria_magic import MariaMagic
 from mariadb_kernel.maria_magics.bar import Bar
 from mariadb_kernel.maria_magics.pie import Pie
 
-def get():
-    return {
-        "line": Line,
-        "bar": Bar,
-        "pie": Pie,
-        "df": DF,
-        "lsmagic": LSMagic
-    }
 
+def get():
+    return {"line": Line, "bar": Bar, "pie": Pie, "df": DF, "lsmagic": LSMagic}

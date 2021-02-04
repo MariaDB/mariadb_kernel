@@ -13,6 +13,7 @@ their duties.
 
 from mariadb_kernel.maria_magics.magic_factory import MagicFactory
 
+
 class CodeParser:
     def __init__(self, log, cell_code):
         self.code = cell_code

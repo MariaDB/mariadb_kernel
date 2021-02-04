@@ -6,6 +6,7 @@
 from mariadb_kernel.maria_magics.maria_magic import MariaMagic
 from mariadb_kernel.maria_magics import supported_magics
 
+
 class MagicFactory:
     def __init__(self, log):
         self.log = log
@@ -18,10 +19,11 @@ class MagicFactory:
         magic_type = magics[magic_cmd]
         return magic_type(args)
 
+
 class ErrorMagic(MariaMagic):
     def __init__(self, name):
         self.name = name
-    def execute(self, kernel, data):
-        msg = f'The %{self.name} magic command does not exist'
-        kernel._send_message('stderr', msg)
 
+    def execute(self, kernel, data):
+        msg = f"The %{self.name} magic command does not exist"
+        kernel._send_message("stderr", msg)

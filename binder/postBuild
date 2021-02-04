@@ -7,4 +7,3 @@ cp binder/.my.cnf ~/
 python setup.py --version
 
 python -m mariadb_kernel.install
-

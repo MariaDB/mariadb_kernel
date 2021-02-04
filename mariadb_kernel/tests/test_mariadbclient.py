@@ -5,10 +5,11 @@ from unittest.mock import Mock
 from ..mariadb_client import MariaDBClient, ServerIsDownError, LoginError
 from ..client_config import ClientConfig
 
+
 def test_mariadb_client_logs_error_when_clienbin_invalid():
     mocklog = Mock()
     mockconfig = Mock()
-    client_bin = 'invalid_mysql'
+    client_bin = "invalid_mysql"
     mockconfig.client_bin.return_value = client_bin
 
     client = MariaDBClient(mocklog, mockconfig)
@@ -17,6 +18,7 @@ def test_mariadb_client_logs_error_when_clienbin_invalid():
     mocklog.error.assert_any_call(
         f"No mariadb> command line client found at {client_bin};"
     )
+
 
 def test_mariadb_client_raises_when_server_is_down():
     mocklog = Mock()
@@ -34,17 +36,20 @@ def test_mariadb_client_raises_when_server_is_down():
     mocklog.error.assert_any_call("MariaDB client failed to start")
     mocklog.error.assert_any_call("Most probably the MariaDB server is not started")
 
+
 def test_mariadb_client_raises_when_credentials_are_wrong(mariadb_server):
     mocklog = Mock()
     mockconfig = Mock()
 
     # Start the server
-    mockconfig.server_bin.return_value = 'mysqld'
+    mockconfig.server_bin.return_value = "mysqld"
     mariadb_server(mocklog, mockconfig)
 
     # Give the client a wrong port, simulate that MariaDB Server is down
     mockconfig.client_bin.return_value = "mysql"
-    mockconfig.get_args.return_value = '--user=root --password="somewrongpass" --port=3306'
+    mockconfig.get_args.return_value = (
+        '--user=root --password="somewrongpass" --port=3306'
+    )
 
     client = MariaDBClient(mocklog, mockconfig)
 
@@ -54,9 +59,10 @@ def test_mariadb_client_raises_when_credentials_are_wrong(mariadb_server):
     mocklog.error.assert_any_call("MariaDB client failed to start")
     mocklog.error.assert_any_call("The credentials used for connecting are wrong")
 
+
 def test_mariadb_client_run_statement(mariadb_server):
     mocklog = Mock()
-    cfg = ClientConfig(mocklog, name='nonexistentcfg.json')
+    cfg = ClientConfig(mocklog, name="nonexistentcfg.json")
     mariadb_server(mocklog, cfg)
 
     client = MariaDBClient(mocklog, cfg)
@@ -74,4 +80,3 @@ def test_mariadb_client_run_statement(mariadb_server):
     assert client.iserror()
 
     assert result == client.error_message()
-

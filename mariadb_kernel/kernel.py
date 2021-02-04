@@ -33,17 +33,17 @@ class MariaDBKernel(Kernel):
         self.client_config = ClientConfig(self.log)
         self.mariadb_client = MariaDBClient(self.log, self.client_config)
         self.mariadb_server = None
-        self.data = {
-            "last_select": pandas.DataFrame([])
-        }
+        self.data = {"last_select": pandas.DataFrame([])}
 
         try:
             self.mariadb_client.start()
         except ServerIsDownError:
             if not self.client_config.start_server():
-                self.log.error("The options passed through mariadb_kernel.json "
-                               "prevent the kernel from starting a testing "
-                               "MariaDB server instance")
+                self.log.error(
+                    "The options passed through mariadb_kernel.json "
+                    "prevent the kernel from starting a testing "
+                    "MariaDB server instance"
+                )
                 raise
 
             # Start a single MariaDB server for a better experience
@@ -55,22 +55,20 @@ class MariaDBKernel(Kernel):
             if self.mariadb_server.is_up():
                 self.mariadb_client.start()
 
-
     def _execute_magics(self, magics):
         for magic in magics:
             magic.execute(self, self.data)
 
     def _update_data(self, result_html):
-        if not result_html or not result_html.startswith('<TABLE'):
+        if not result_html or not result_html.startswith("<TABLE"):
             return
 
         df = pandas.read_html(result_html)
         self.data["last_select"] = df[0]
 
     def _send_message(self, stream, message):
-        error = {'name': stream, 'text': message + '\n'}
-        self.send_response(self.iopub_socket, 'stream', error)
-
+        error = {"name": stream, "text": message + "\n"}
+        self.send_response(self.iopub_socket, "stream", error)
 
     def do_execute(
         self, code, silent, store_history=True, user_expressions=None, allow_stdin=False
@@ -86,14 +84,14 @@ class MariaDBKernel(Kernel):
         try:
             parser = CodeParser(self.log, code)
         except ValueError as e:
-            self._send_message('stderr', str(e))
+            self._send_message("stderr", str(e))
             return rv
 
         statements = parser.get_sql()
         for s in statements:
             result = self.mariadb_client.run_statement(s)
             if self.mariadb_client.iserror():
-                self._send_message('stderr', self.mariadb_client.error_message())
+                self._send_message("stderr", self.mariadb_client.error_message())
                 continue
 
             self._update_data(result)
@@ -108,7 +106,7 @@ class MariaDBKernel(Kernel):
     def do_shutdown(self, restart):
         self.mariadb_client.stop()
         if self.mariadb_server:
-                self.mariadb_server.stop()
+            self.mariadb_server.stop()
 
     def do_complete(self, code, cursor_pos):
         return {"status": "ok", "matches": ["test"]}
