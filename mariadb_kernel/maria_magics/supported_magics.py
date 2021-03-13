@@ -10,6 +10,7 @@ from mariadb_kernel.maria_magics.maria_magic import MariaMagic
 from mariadb_kernel.maria_magics.bar import Bar
 from mariadb_kernel.maria_magics.pie import Pie
 from mariadb_kernel.maria_magics.delimiter import Delimiter
+from mariadb_kernel.maria_magics.load import Load
 
 
 def get():
@@ -20,4 +21,5 @@ def get():
         "df": DF,
         "lsmagic": LSMagic,
         "delimiter": Delimiter,
+        "load": Load,
     }
