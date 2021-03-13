@@ -1,8 +1,8 @@
-"""This class implements the %load magic commdnad"""
+"""This class implements the %load magic command"""
 
 help_text = """
-The %laod magic command has the following syntax:
-    > %loav [csv file path] [be updated table name]
+The %load magic command has the following syntax:
+    > %load [csv file path] [be updated table name]
 The %load magic command can load CSV file for updating specific table data 
 """
 
