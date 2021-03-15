@@ -14,15 +14,51 @@ class MariaREPL(replwrap.REPLWrapper):
         self.kwargs = kwargs
 
     def _expect_prompt(self, timeout=-1, async_=False):
-        return self.child.expect([self.prompt], timeout=timeout, async_=async_)
+        # This list contains all the patterns that should match all
+        # continuation prompts issued by MariaDB client
+        cprompt_regex = [
+            re.compile(r"/\*>"),
+            re.compile(r"->"),
+            re.compile(r"'>"),
+            re.compile(r"\">"),
+            re.compile(r"`>"),
+        ]
+        # This list contains all the strings that one can send
+        # to the client to exit a particular continuation prompt
+        # Example:
+        # If you miss a "'" from an SQL statement, the MariaDB client
+        # shows you a '> continuation prompt, indicating that you need
+        # to send a "'" to end the string you begun but didn't close
+        cprompt_exit = ["*/", ";", "'", '"', "`"]
 
-    def run_command(self, code, timeout=-1, async_=False):
+        patterns = [self.prompt]
+        patterns.extend(cprompt_regex)
+
+        # Expect all potential prompts and continuation promps, if
+        # 0 is returned, it means the statement was fully correct
+        idx = self.child.expect(patterns, timeout=timeout, async_=async_)
+        if idx == 0:
+            return 0
+
+        # If the statement wasn't correct and the client sent us a continuation
+        # prompt, we have a problem, there is no nice way to exit a continuation
+        # prompt. You either have to kill the client and start over or you have
+        # to send it the characters that it wants.
+        # So here we look which pattern for continuation prompt we matched and
+        # use the map from above to send the client the chars it expects.
+        # We do this until the client says stop and we get a match on the
+        # correct prompt (i.e. idx = 0)
+        while idx != 0:
+            self.child.sendline(cprompt_exit[idx - 1])
+            idx = self.child.expect(patterns)
+
+        raise ContinuationPromptError()
+
+    def run_command(self, code, log, timeout=-1, async_=False):
         # TODO: take care of pexpect.send limitation of 1024 characters
-        # TODO: clean input if comments are permitted
-        # TODO: implement support for continuation prompt
 
         self.child.sendline(code)
-        self._expect_prompt(timeout, async_)
+        pattern = self._expect_prompt(timeout, async_)
 
         return self.child.before
 
@@ -92,7 +128,7 @@ class MariaDBClient:
         result = ""
         # TODO: double check exception handling
         try:
-            result = self.maria_repl.run_command(code, timeout)
+            result = self.maria_repl.run_command(code, self.log, timeout)
         except EOF as e:
             self.log.error(
                 f'MariaDB client failed to run command "{code}". '
@@ -120,4 +156,8 @@ class ServerIsDownError(Exception):
 
 
 class LoginError(Exception):
+    pass
+
+
+class ContinuationPromptError(Exception):
     pass

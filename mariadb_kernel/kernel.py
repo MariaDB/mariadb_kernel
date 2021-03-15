@@ -6,7 +6,11 @@ from ipykernel.kernelbase import Kernel
 
 from ._version import version as __version__
 from mariadb_kernel.client_config import ClientConfig
-from mariadb_kernel.mariadb_client import MariaDBClient, ServerIsDownError
+from mariadb_kernel.mariadb_client import (
+    MariaDBClient,
+    ServerIsDownError,
+    ContinuationPromptError,
+)
 from mariadb_kernel.code_parser import CodeParser
 from mariadb_kernel.mariadb_server import MariaDBServer
 from mariadb_kernel.maria_magics.maria_magic import MariaMagic
@@ -101,7 +105,17 @@ class MariaDBKernel(Kernel):
 
         statements = parser.get_sql()
         for s in statements:
-            result = self.mariadb_client.run_statement(s)
+            try:
+                result = self.mariadb_client.run_statement(s)
+            except ContinuationPromptError:
+                self._send_message(
+                    "stderr",
+                    "We detected a continuation prompt in the output coming from the MariaDB Client.\n"
+                    + "Most probably you forgot to close the quotes for a string.\n"
+                    + "Please fix the error in the statement and try again.",
+                )
+                return rv
+
             if self.mariadb_client.iserror():
                 self._send_message("stderr", self.mariadb_client.error_message())
                 continue
