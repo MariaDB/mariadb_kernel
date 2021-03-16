@@ -121,13 +121,26 @@ class MariaDBKernel(Kernel):
                 continue
 
             self._update_data(result)
-
-            display_content = {
-                "data": {"text/html": self._styled_result(result)},
-                "metadata": {},
-            }
+            result_str = str(result)
             if not silent:
-                self.send_response(self.iopub_socket, "display_data", display_content)
+                if (
+                    not result_str
+                ):  # empty result set, should, show success info to user
+                    display_content = {
+                        "data": {"text/plain": "Query OK"},
+                        "metadata": {},
+                    }
+                    self.send_response(
+                        self.iopub_socket, "display_data", display_content
+                    )
+                else:
+                    display_content = {
+                        "data": {"text/html": result_str},
+                        "metadata": {},
+                    }
+                    self.send_response(
+                        self.iopub_socket, "display_data", display_content
+                    )
 
         self._execute_magics(parser.get_magics())
 
