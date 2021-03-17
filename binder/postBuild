@@ -1,8 +1,5 @@
 set -ex
 
-curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup -o mariadb_repo_setup && sudo bash mariadb_repo_setup --skip-maxscale --skip-tools
-sudo apt install -y mariadb-server
-
 mkdir datadir
 mysql_install_db --user=jovyan --datadir=./datadir --auth-root-authentication-method=normal
 cp binder/.my.cnf ~/

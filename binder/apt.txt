@@ -1,2 +1,2 @@
-apt-transport-https
+mariadb-server
 vim
