@@ -3,7 +3,7 @@
 help_text = """
 The %load magic command has the following syntax:
     > %load [csv file path] [be updated table name]
-The %load magic command can load CSV file for updating specific table data 
+The %load magic command can load CSV file for updating specific table data
 """
 
 from mariadb_kernel.maria_magics.line_magic import LineMagic
