@@ -81,8 +81,28 @@ def test_mariadb_client_run_statement(mariadb_server):
 
     assert result == client.error_message()
 
+    # Client should say a "Query OK" for queries that don't return a result
     client.run_statement("create database if not exists test;")
-
     result = client.run_statement("use test;")
-
     assert result == "Query OK"
+
+def test_multi_line_output(mariadb_server):
+    mocklog = Mock()
+    cfg = ClientConfig(mocklog, name="nonexistentcfg.json")
+    mariadb_server(mocklog, cfg)
+
+    client = MariaDBClient(mocklog, cfg)
+
+    client.start()
+
+    result = client.run_statement(
+        """select json_detailed('["an array", "of", "json", {"objects": ["embedded", 1, 2, 3]}]');"""
+    )
+
+    # Debug info in case something changes in the output and test starts failing
+    print(repr(result))
+
+    # The expected output should contain a cell with the prettyfied JSON output
+    expected = """<TABLE BORDER=1><TR><TH>json_detailed('[&quot;an array&quot;, &quot;of&quot;, &quot;json&quot;, {&quot;objects&quot;: [&quot;embedded&quot;, 1, 2, 3]}]')</TH></TR><TR><TD>[\r\n    &quot;an array&quot;,\r\n    &quot;of&quot;,\r\n    &quot;json&quot;,\r\n    \r\n    {\r\n        &quot;objects&quot;: \r\n        [\r\n            &quot;embedded&quot;,\r\n            1,\r\n            2,\r\n            3\r\n        ]\r\n    }\r\n]</TD></TR></TABLE>"""
+
+    assert result == expected
