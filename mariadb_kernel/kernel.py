@@ -139,7 +139,9 @@ class MariaDBKernel(Kernel):
                         "metadata": {},
                     }
                     self.send_response(
-                        self.iopub_socket, "display_data", display_content
+                        self.iopub_socket,
+                        "display_data",
+                        self._styled_result(display_content),
                     )
 
         self._execute_magics(parser.get_magics())
