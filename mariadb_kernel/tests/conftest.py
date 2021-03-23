@@ -6,6 +6,14 @@ from subprocess import check_output
 from ..mariadb_server import MariaDBServer
 
 
+def cleanup_server_setup():
+    cnfpath = Path.home().joinpath(".my.cnf")
+    backup = Path.home().joinpath("mycnf_backup")
+    if backup.exists():
+        backup.replace(cnfpath)
+    shutil.rmtree("/tmp/datadir-test")
+
+
 @pytest.fixture(scope="session", autouse=True)
 def server_setup():
     cfg = """
@@ -31,20 +39,21 @@ def server_setup():
 
     os.mkdir("/tmp/datadir-test")
 
-    check_output(
-        [
-            "mysql_install_db",
-            "--datadir=/tmp/datadir-test",
-            "--auth-root-authentication-method=normal",
-        ]
-    )
+    try:
+        check_output(
+            [
+                "mysql_install_db",
+                "--datadir=/tmp/datadir-test",
+                "--auth-root-authentication-method=normal",
+            ]
+        )
+    except:
+        cleanup_server_setup()
+        raise
+
     yield
 
-    cnfpath = Path.home().joinpath(".my.cnf")
-    backup = Path.home().joinpath("mycnf_backup")
-    if backup.exists():
-        backup.replace(cnfpath)
-    shutil.rmtree("/tmp/datadir-test")
+    cleanup_server_setup()
 
 
 @pytest.fixture
