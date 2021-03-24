@@ -2,7 +2,12 @@ import pytest
 from subprocess import check_output
 from unittest.mock import Mock
 
-from ..mariadb_client import MariaDBClient, ServerIsDownError, LoginError
+from ..mariadb_client import (
+    MariaDBClient,
+    ServerIsDownError,
+    LoginError,
+    ContinuationPromptError,
+)
 from ..client_config import ClientConfig
 
 
@@ -106,3 +111,34 @@ def test_multi_line_output(mariadb_server):
     expected = """<TABLE BORDER=1><TR><TH>json_detailed('[&quot;an array&quot;, &quot;of&quot;, &quot;json&quot;, {&quot;objects&quot;: [&quot;embedded&quot;, 1, 2, 3]}]')</TH></TR><TR><TD>[\r\n    &quot;an array&quot;,\r\n    &quot;of&quot;,\r\n    &quot;json&quot;,\r\n    \r\n    {\r\n        &quot;objects&quot;: \r\n        [\r\n            &quot;embedded&quot;,\r\n            1,\r\n            2,\r\n            3\r\n        ]\r\n    }\r\n]</TD></TR></TABLE>"""
 
     assert result == expected
+
+
+def test_input_lines_longer_than_max_cannon(mariadb_server):
+    # See https://pexpect.readthedocs.io/en/stable/api/pexpect.html#pexpect.spawn.send
+    # for an explanation on why this limitation exists
+    mocklog = Mock()
+    cfg = ClientConfig(mocklog, name="nonexistentcfg.json")
+    mariadb_server(mocklog, cfg)
+
+    client = MariaDBClient(mocklog, cfg)
+
+    client.start()
+
+    from os import fpathconf
+
+    max_chars = fpathconf(0, "PC_MAX_CANON")
+    print(max_chars)
+
+    large_stmt = "x" * (max_chars - 2)
+    stmt = large_stmt + "\n" + large_stmt
+
+    # the large fake statement should not timeout due to the PC_MAX_CANON bug,
+    # because it is composed of two lines smaller than PC_MAX_CANON separated by a line break
+    with pytest.raises(ContinuationPromptError):
+        result = client.maria_repl.run_command(large_stmt, None, timeout=2)
+
+    # To be uncommented when the limitation for PC_MAX_CANON chars per line is solved
+    # run_statement will time out if the limitation isn't solved
+    # large_stmt = 'x' * (max_chars + 1)
+    # with pytest.raises(ContinuationPromptError):
+    #     result = client.maria_repl.run_command(large_stmt, None, timeout=2)
