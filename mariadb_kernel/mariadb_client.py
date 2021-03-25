@@ -147,6 +147,8 @@ class MariaDBClient:
             self.errormsg = result
         else:
             self.error = False
+        if not result:
+            result = "Query OK"
 
         return result
 
