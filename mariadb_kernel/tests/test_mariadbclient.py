@@ -80,3 +80,9 @@ def test_mariadb_client_run_statement(mariadb_server):
     assert client.iserror()
 
     assert result == client.error_message()
+
+    client.run_statement("create database if not exists test;")
+
+    result = client.run_statement("use test;")
+
+    assert result == "Query OK"
