@@ -9,7 +9,15 @@ from mariadb_kernel.maria_magics.lsmagic import LSMagic
 from mariadb_kernel.maria_magics.maria_magic import MariaMagic
 from mariadb_kernel.maria_magics.bar import Bar
 from mariadb_kernel.maria_magics.pie import Pie
+from mariadb_kernel.maria_magics.delimiter import Delimiter
 
 
 def get():
-    return {"line": Line, "bar": Bar, "pie": Pie, "df": DF, "lsmagic": LSMagic}
+    return {
+        "line": Line,
+        "bar": Bar,
+        "pie": Pie,
+        "df": DF,
+        "lsmagic": LSMagic,
+        "delimiter": Delimiter,
+    }

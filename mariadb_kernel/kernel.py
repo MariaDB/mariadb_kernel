@@ -35,6 +35,7 @@ class MariaDBKernel(Kernel):
     def __init__(self, **kwargs):
         Kernel.__init__(self, **kwargs)
         self.log.setLevel(logging.INFO)
+        self.delimiter = ";"
         self.client_config = ClientConfig(self.log)
         self.mariadb_client = MariaDBClient(self.log, self.client_config)
         self.mariadb_server = None
@@ -59,6 +60,13 @@ class MariaDBKernel(Kernel):
             # Reconnect the client now that the server is up
             if self.mariadb_server.is_up():
                 self.mariadb_client.start()
+
+    def get_delimiter(self):
+        return self.delimiter
+
+    def set_delimiter(self, delimiter):
+        self.mariadb_client.run_statement(f"delimiter {delimiter}")
+        self.delimiter = delimiter
 
     def _execute_magics(self, magics):
         for magic in magics:
@@ -98,7 +106,7 @@ class MariaDBKernel(Kernel):
         }
 
         try:
-            parser = CodeParser(self.log, code)
+            parser = CodeParser(self.log, code, self.delimiter)
         except ValueError as e:
             self._send_message("stderr", str(e))
             return rv
