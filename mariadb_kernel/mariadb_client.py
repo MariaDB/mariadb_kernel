@@ -128,11 +128,11 @@ class MariaDBClient:
             # We only keep the SQL error message and discard the first part
             regex = re.compile(r"^ERROR.+in file: \'.+mariadb_statement\': ")
             self.errormsg = regex.sub("", result, count=1)
-        else:
-            self.error = False
-        if not result:
+            return self.errormsg
+        elif not result:
             result = "Query OK"
 
+        self.error = False
         return result
 
 

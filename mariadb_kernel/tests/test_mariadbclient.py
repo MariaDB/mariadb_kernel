@@ -80,7 +80,7 @@ def test_mariadb_client_run_statement(mariadb_server):
 
     result = client.run_statement("select a from not_a_table;")
 
-    assert result.startswith("ERROR")
+    assert result.startswith("No database")
 
     assert client.iserror()
 
@@ -124,21 +124,11 @@ def test_input_lines_longer_than_max_cannon(mariadb_server):
 
     client.start()
 
-    from os import fpathconf
-
-    max_chars = fpathconf(0, "PC_MAX_CANON")
-    print(max_chars)
+    # Max default that I know of is 4096 on linux
+    max_chars = 4098
 
     large_stmt = "x" * (max_chars - 2)
     stmt = large_stmt + "\n" + large_stmt
 
-    # the large fake statement should not timeout due to the PC_MAX_CANON bug,
-    # because it is composed of two lines smaller than PC_MAX_CANON separated by a line break
-    with pytest.raises(ContinuationPromptError):
-        result = client.maria_repl.run_command(large_stmt, None, timeout=2)
-
-    # To be uncommented when the limitation for PC_MAX_CANON chars per line is solved
-    # run_statement will time out if the limitation isn't solved
-    # large_stmt = 'x' * (max_chars + 1)
-    # with pytest.raises(ContinuationPromptError):
-    #     result = client.maria_repl.run_command(large_stmt, None, timeout=2)
+    # Should not throw a TIMEOUT exception
+    client.maria_repl.run_command(large_stmt, timeout=3)
