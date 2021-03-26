@@ -91,6 +91,7 @@ def test_mariadb_client_run_statement(mariadb_server):
     result = client.run_statement("use test;")
     assert result == "Query OK"
 
+
 def test_multi_line_output(mariadb_server):
     mocklog = Mock()
     cfg = ClientConfig(mocklog, name="nonexistentcfg.json")
