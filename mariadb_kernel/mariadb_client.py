@@ -120,7 +120,14 @@ class MariaDBClient:
 
         if result.startswith("ERROR"):
             self.error = True
-            self.errormsg = result
+
+            # Get rid of extra info in the error message that isn't interesting
+            # in this case.
+            # This matches error messages that look like:
+            # """ERROR 1064 (42000) at line 1 in file: './mariadb_statement': You have an error..."""
+            # We only keep the SQL error message and discard the first part
+            regex = re.compile(r"^ERROR.+in file: \'.+mariadb_statement\': ")
+            self.errormsg = regex.sub("", result, count=1)
         else:
             self.error = False
         if not result:
