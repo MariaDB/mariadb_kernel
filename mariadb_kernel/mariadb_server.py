@@ -22,13 +22,19 @@ class MariaDBServer:
         server_bin = config.server_bin()
         # server_bin can either be an absolute path or just the name of the bin
         self.server_name = server_bin.split("/")[-1]
-        self.server_up = False
+        self.server = None
 
     def start(self):
         server_bin = self.config.server_bin()
+        args = self.config.get_server_args()
+        cmd = []
+        cmd.append(server_bin)
+        cmd.extend(args)
         try:
+            self.init_db()
+            self.log.info(f"Calling {cmd}")
             self.server = subprocess.Popen(
-                [server_bin],
+                cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 universal_newlines=True,
@@ -45,7 +51,21 @@ class MariaDBServer:
         msg = f"{self.server_name}: ready for connections"
         self._wait_server(self.server.stderr, msg)
         self.log.info("Started MariaDB server successfully")
-        self.server_up = True
+
+    def init_db(self):
+        server_bin = self.config.db_init_bin()
+        args = self.config.get_init_args()
+        cmd = []
+        cmd.append(server_bin)
+        cmd.extend(args)
+        try:
+            self.log.info(f"Calling {cmd}")
+            subprocess.call(cmd)
+        except FileNotFoundError:
+            self.log.error(f"Could not find {server_bin}")
+            raise
+
+        return
 
     def stop(self):
         if not self.is_up():
@@ -55,13 +75,13 @@ class MariaDBServer:
         msg = f"{self.server_name}: Shutdown complete"
         self._wait_server(self.server.stderr, msg)
         self.log.info("Stopped MariaDB server successfully")
-        self.server_up = False
 
     def _wait_server(self, stream, msg):
-        while True:
-            line = stream.readline()
+        while self.is_up():
+            line = stream.readline().rstrip()
+            self.log.info(line)
             if msg in line:
                 return
 
     def is_up(self):
-        return self.server_up
+        return self.server and self.server.poll() is None
