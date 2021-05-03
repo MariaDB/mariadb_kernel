@@ -143,7 +143,7 @@ class MariaDBKernel(Kernel):
 
     def do_shutdown(self, restart):
         self.mariadb_client.stop()
-        if self.mariadb_server:
+        if self.mariadb_server and self.mariadb_server.is_up():
             self.mariadb_server.stop()
 
     def do_complete(self, code, cursor_pos):
