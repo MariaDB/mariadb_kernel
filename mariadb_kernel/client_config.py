@@ -22,9 +22,9 @@ class ClientConfig:
             "server_bin": "mysqld",
             "db_init_bin": "mysql_install_db",
             "extra_server_config": ["--pid-file=/tmp/mysqld.pid",
-                                    f"--datadir={os.path.join(os.environ.get('HOME'), 'work', '.db')}",
+                                    f"--datadir={os.path.join(os.environ.get('HOME', '/home/jovyan/'), 'work', '.db')}",
                                     "--skip_log_error"],
-            "extra_db_init_config": [f"--user={os.environ.get('NB_USER')}",
+            "extra_db_init_config": [f"--user={os.environ.get('NB_USER', 'jovyan')}",
                                      "--auth-root-authentication-method=normal",
                                      "--skip-test-db",
                                      "--rpm"]
