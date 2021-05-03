@@ -50,8 +50,11 @@ class MariaDBServer:
 
         msg = f"{self.server_name}: ready for connections"
         self._wait_server(self.server.stderr, msg)
-        self.log.info("Started MariaDB server successfully")
-
+        if self.is_up():
+            self.log.info("Started MariaDB server successfully")
+        else:
+            self.log.error("MariaDB server did NOT start successfully")
+    
     def init_db(self):
         server_bin = self.config.db_init_bin()
         args = self.config.get_init_args()
@@ -79,7 +82,7 @@ class MariaDBServer:
     def _wait_server(self, stream, msg):
         while self.is_up():
             line = stream.readline().rstrip()
-            self.log.info(line)
+            self.log.debug(line)
             if msg in line:
                 return
 
