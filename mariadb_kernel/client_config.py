@@ -21,13 +21,17 @@ class ClientConfig:
             "client_bin": "mysql",
             "server_bin": "mysqld",
             "db_init_bin": "mysql_install_db",
-            "extra_server_config": ["--pid-file=/tmp/mysqld.pid",
-                                    f"--datadir={os.path.join(os.environ.get('HOME', '/home/jovyan/'), 'work', '.db')}",
-                                    "--skip_log_error"],
-            "extra_db_init_config": [f"--user={os.environ.get('NB_USER', 'jovyan')}",
-                                     "--auth-root-authentication-method=normal",
-                                     "--skip-test-db",
-                                     "--rpm"]
+            "extra_server_config": [
+                "--pid-file=/tmp/mysqld.pid",
+                f"--datadir={os.path.join(os.environ.get('HOME', '/home/jovyan/'), 'work', '.db')}",
+                "--skip_log_error",
+            ],
+            "extra_db_init_config": [
+                f"--user={os.environ.get('NB_USER', 'jovyan')}",
+                "--auth-root-authentication-method=normal",
+                "--skip-test-db",
+                "--rpm",
+            ],
         }
 
         self._load_config()
@@ -65,7 +69,9 @@ class ClientConfig:
             using_default = True
 
         if using_default:
-            self.log.info(f"Using default config: {json.dumps(self.default_config, indent=4)}")
+            self.log.info(
+                f"Using default config: {json.dumps(self.default_config, indent=4)}"
+            )
             return
 
         self.default_config.update(cfg)

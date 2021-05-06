@@ -54,7 +54,7 @@ class MariaDBServer:
             self.log.info("Started MariaDB server successfully")
         else:
             self.log.error("MariaDB server did NOT start successfully")
-    
+
     def init_db(self):
         server_bin = self.config.db_init_bin()
         args = self.config.get_init_args()
