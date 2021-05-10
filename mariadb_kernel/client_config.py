@@ -13,23 +13,26 @@ class ClientConfig:
         self.config_name = name
 
         datadir = "/tmp/mariadb_kernel/datadir"
+        pidfile = "/tmp/mariadb_kernel/mysqld.pid"
+        socketfile = "/tmp/mariadb_kernel/mysqld.sock"
+
         if "NB_USER" in os.environ:
             datadir = os.path.join("/home/", os.environ["NB_USER"], "work", ".db")
 
         self.default_config = {
             "user": "root",
             "host": "localhost",
-            "socket": "/tmp/mysqld.sock",
+            "socket": socketfile,
             "port": "3306",
             "password": "",
-            "datadir": datadir,  # Server specific option
+            "server_datadir": datadir,  # Server specific option
+            "server_pid": pidfile,  # Server specific option
             "start_server": "True",
             "client_bin": "mysql",
             "server_bin": "mysqld",
             "db_init_bin": "mysql_install_db",
             "extra_server_config": [
                 "--no-defaults",
-                "--pid-file=/tmp/mysqld.pid",
                 "--skip_log_error",
             ],
             "extra_db_init_config": [
@@ -102,7 +105,8 @@ class ClientConfig:
         rv.append(f"--port={self.default_config['port']}")
         rv.append(f"--bind-address={self.default_config['host']}")
         # Server specific config
-        rv.append(f"--datadir={self.default_config['datadir']}")
+        rv.append(f"--datadir={self.default_config['server_datadir']}")
+        rv.append(f"--pid-file={self.default_config['server_pid']}")
         return rv
 
     def get_init_args(self):
@@ -110,6 +114,13 @@ class ClientConfig:
         rv.extend(self.get_server_args())
         rv.extend(self.default_config["extra_db_init_config"])
         return rv
+
+    def get_server_paths(self):
+        return [
+            os.path.dirname(self.default_config["socket"]),
+            os.path.dirname(self.default_config["server_datadir"]),
+            os.path.dirname(self.default_config["server_pid"]),
+        ]
 
     def start_server(self):
         return self.default_config["start_server"] == "True"

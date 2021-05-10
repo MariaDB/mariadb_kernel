@@ -11,7 +11,7 @@ tries to spin a new instance for testing purposes and issues a warning.
 
 import subprocess
 import signal
-import time
+import os
 
 
 class MariaDBServer:
@@ -30,6 +30,9 @@ class MariaDBServer:
         cmd = []
         cmd.append(server_bin)
         cmd.extend(args)
+        # Create paths needed for pid/socket and datadir
+        for path in self.config.get_server_paths():
+            os.makedirs(path, exist_ok=True)
         try:
             self.init_db()
             self.server = subprocess.Popen(
