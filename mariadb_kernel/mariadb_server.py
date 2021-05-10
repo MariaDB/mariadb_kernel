@@ -32,7 +32,6 @@ class MariaDBServer:
         cmd.extend(args)
         try:
             self.init_db()
-            self.log.info(f"Calling {cmd}")
             self.server = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
@@ -56,17 +55,24 @@ class MariaDBServer:
             self.log.error("MariaDB server did NOT start successfully")
 
     def init_db(self):
-        server_bin = self.config.db_init_bin()
+        db_init_bin = self.config.db_init_bin()
         args = self.config.get_init_args()
         cmd = []
-        cmd.append(server_bin)
+        cmd.append(db_init_bin)
         cmd.extend(args)
         try:
-            self.log.info(f"Calling {cmd}")
-            subprocess.call(cmd)
+            init_process = subprocess.run(
+                cmd,
+                capture_output=True,
+                universal_newlines=True,
+            )
         except FileNotFoundError:
-            self.log.error(f"Could not find {server_bin}")
+            self.log.error(f"Could not find {db_init_bin}")
             raise
+
+        if init_process.returncode > 0:
+            self.log.error("Init failed, output:")
+            self.log.error(init_process.stderr)
 
         return
 

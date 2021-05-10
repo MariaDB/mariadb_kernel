@@ -11,26 +11,29 @@ class ClientConfig:
     def __init__(self, log, name="mariadb_config.json"):
         self.log = log
         self.config_name = name
+
+        datadir = "/tmp/mariadb_kernel/datadir"
+        if "NB_USER" in os.environ:
+            datadir = os.path.join("/home/", os.environ["NB_USER"], "work", ".db")
+
         self.default_config = {
             "user": "root",
             "host": "localhost",
             "socket": "/tmp/mysqld.sock",
             "port": "3306",
             "password": "",
+            "datadir": datadir,  # Server specific option
             "start_server": "True",
             "client_bin": "mysql",
             "server_bin": "mysqld",
             "db_init_bin": "mysql_install_db",
             "extra_server_config": [
+                "--no-defaults",
                 "--pid-file=/tmp/mysqld.pid",
-                f"--datadir={os.path.join(os.environ.get('HOME', '/home/jovyan/'), 'work', '.db')}",
                 "--skip_log_error",
             ],
             "extra_db_init_config": [
-                f"--user={os.environ.get('NB_USER', 'jovyan')}",
                 "--auth-root-authentication-method=normal",
-                "--skip-test-db",
-                "--rpm",
             ],
         }
 
@@ -94,11 +97,12 @@ class ClientConfig:
     def get_server_args(self):
         rv = []
         rv.extend(self.default_config["extra_server_config"])
-        # get_args return a string and we need it as a list
-        # we also do not want user as sql user might differ from exec user
+        # Use same connection config for both server and client
         rv.append(f"--socket={self.default_config['socket']}")
         rv.append(f"--port={self.default_config['port']}")
         rv.append(f"--bind-address={self.default_config['host']}")
+        # Server specific config
+        rv.append(f"--datadir={self.default_config['datadir']}")
         return rv
 
     def get_init_args(self):
