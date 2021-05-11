@@ -20,6 +20,8 @@ import pexpect
 import re
 import pandas
 from bs4 import BeautifulSoup
+import os
+import signal
 
 
 class MariaDBKernel(Kernel):
@@ -141,10 +143,52 @@ class MariaDBKernel(Kernel):
 
         return rv
 
-    def do_shutdown(self, restart):
-        self.mariadb_client.stop()
+    def num_connected_clients(self):
+        sql_query = "select count(id) from information_schema.processlist;"
+        # If there is any errors we raise
+        # (not much we can do if there is a error)
+        result_html = self.mariadb_client.run_statement(code=sql_query)
+        if self.mariadb_client.iserror():
+            raise Exception
+        df = pandas.read_html(result_html)
+        num_clients = int(df[0]["count(id)"][0])
+
+        return num_clients
+
+    def kill_server(self):
         if self.mariadb_server and self.mariadb_server.is_up():
+            self.log.info(f"Stopping (own) MariaDB server")
             self.mariadb_server.stop()
+        elif not self.mariadb_server:
+            pidfile = self.client_config.get_server_pidfile()
+            try:
+                with open(pidfile, "r") as f:
+                    pid = int(f.read())
+            except Exception:
+                self.log.error(f"Failed reading pid file {pidfile}")
+                return
+
+            if pid:
+                self.log.info(
+                    f"Sending stop signal to MariaDB server started by another kernel {pid}"
+                )
+                os.kill(pid, signal.SIGQUIT)
+
+    def do_shutdown(self, restart):
+        num_clients = None
+        if self.client_config.start_server():
+            try:
+                num_clients = self.num_connected_clients()
+            except Exception:
+                self.log.error(
+                    "Failed querying server (of number of clients connected)"
+                )
+
+        self.mariadb_client.stop()
+
+        if num_clients is not None and num_clients <= 1:
+            self.log.info("No more clients connected to server")
+            self.kill_server()
 
     def do_complete(self, code, cursor_pos):
         return {"status": "ok", "matches": ["test"]}
