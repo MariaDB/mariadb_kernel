@@ -28,7 +28,7 @@ RUN useradd -ms /bin/bash --uid 1001 -g 1001 mkernel
 
 # Add sudo rights to user
 RUN usermod -a -G sudo mkernel
-RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers  
+RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
 USER mkernel
 
