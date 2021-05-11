@@ -1,3 +1,4 @@
+import json
 import os
 import pytest
 from unittest.mock import patch, Mock
@@ -16,7 +17,9 @@ def test_client_config_file_doesnt_exist(mock_config_path):
     mocklog.info.assert_any_call(
         "Config file mariadb_config.json at ./mariadb_config.json does not exist"
     )
-    mocklog.info.assert_any_call(f"Using default config: {cfg.default_config}")
+    mocklog.info.assert_any_call(
+        f"Using default config: {json.dumps(cfg.default_config,indent=4)}"
+    )
 
 
 @patch.object(ClientConfig, "_config_path", return_value="./mariadb_config.json")
@@ -37,7 +40,9 @@ def test_client_config_invalid_json(mock_config_path):
         "Config file mariadb_config.json at ./mariadb_config.json is not valid JSON: "
         "Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"
     )
-    mocklog.info.assert_any_call(f"Using default config: {cfg.default_config}")
+    mocklog.info.assert_any_call(
+        f"Using default config: {json.dumps(cfg.default_config,indent=4)}"
+    )
 
 
 @patch.object(ClientConfig, "_config_path", return_value="./mariadb_config.json")
@@ -50,11 +55,11 @@ def test_client_config_unsupported_options(mock_config_path):
     # "client_bin": "/test/path/mariadb",
     # "server_bin": "/test/path/mariadbd"}
     # """
-    json = '{"unsupported_option": "unsupported"}'
+    jsoncfg = '{"unsupported_option": "unsupported"}'
 
     # Create a config file containing some unsupported options
     with open("mariadb_config.json", "w") as json_file:
-        json_file.write(json)
+        json_file.write(jsoncfg)
 
     mocklog = Mock()
     cfg = ClientConfig(mocklog)
@@ -66,7 +71,9 @@ def test_client_config_unsupported_options(mock_config_path):
         "Config file mariadb_config.json at ./mariadb_config.json "
         "contains unsupported options: {'unsupported_option'}"
     )
-    mocklog.info.assert_any_call(f"Using default config: {cfg.default_config}")
+    mocklog.info.assert_any_call(
+        f"Using default config: {json.dumps(cfg.default_config,indent=4)}"
+    )
 
 
 @patch.object(ClientConfig, "_config_path", return_value="./mariadb_config.json")
@@ -75,6 +82,7 @@ def test_client_config_loads_correct_values(mock_config_path):
     {"user": "testuser",
      "host": "testhost",
      "port": "00",
+     "socket": "socketfile",
      "start_server": "False",
      "password": "secret_password",
      "client_bin": "/test/path/mariadb",
@@ -97,7 +105,7 @@ def test_client_config_loads_correct_values(mock_config_path):
 
     assert (
         cfg.get_args()
-        == "--user=testuser --host=testhost --port=00 --password=secret_password "
+        == "--user=testuser --host=testhost --port=00 --password=secret_password --socket=socketfile "
     )
     assert cfg.start_server() == False
     assert cfg.client_bin() == "/test/path/mariadb"

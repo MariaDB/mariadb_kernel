@@ -1,6 +1,6 @@
 import pytest
 from subprocess import check_output
-from unittest.mock import Mock
+from unittest.mock import patch, Mock
 
 from ..mariadb_client import (
     MariaDBClient,
@@ -44,20 +44,17 @@ def test_mariadb_client_raises_when_server_is_down():
 
 def test_mariadb_client_raises_when_credentials_are_wrong(mariadb_server):
     mocklog = Mock()
-    mockconfig = Mock()
 
-    # Start the server
-    mockconfig.server_bin.return_value = "mysqld"
-    mariadb_server(mocklog, mockconfig)
+    cfg = ClientConfig(mocklog, name="nonexistentcfg.json")  # default config
 
-    # Give the client a wrong port, simulate that MariaDB Server is down
-    mockconfig.client_bin.return_value = "mysql"
-    mockconfig.get_args.return_value = (
-        '--user=root --password="somewrongpass" --port=3306'
+    # Give the client wrong credentials
+    cfg.default_config.update(
+        {"user": "root", "password": "somewrongpassword", "port": 3306}
     )
 
-    client = MariaDBClient(mocklog, mockconfig)
-
+    # Start the server
+    mariadb_server(mocklog, cfg)
+    client = MariaDBClient(mocklog, cfg)
     with pytest.raises(LoginError):
         client.start()
 
@@ -67,7 +64,7 @@ def test_mariadb_client_raises_when_credentials_are_wrong(mariadb_server):
 
 def test_mariadb_client_run_statement(mariadb_server):
     mocklog = Mock()
-    cfg = ClientConfig(mocklog, name="nonexistentcfg.json")
+    cfg = ClientConfig(mocklog, name="nonexistentcfg.json")  # default config
     mariadb_server(mocklog, cfg)
 
     client = MariaDBClient(mocklog, cfg)
