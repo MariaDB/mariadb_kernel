@@ -22,18 +22,30 @@ RUN curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup -o mariadb
 
 RUN apt install -y mariadb-server
 
+# Create mkernel user
+RUN groupadd mkernel --gid 1001
+RUN useradd -ms /bin/bash --uid 1001 -g 1001 mkernel
+
+# Add sudo rights to user
+RUN usermod -a -G sudo mkernel
+RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+
+USER mkernel
+
 # Download and "silently" install conda from miniforge into ~/miniforge
 RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh
 RUN /bin/bash ~/miniconda.sh -b -p ~/miniconda
 
 # Add conda to PATH
-ENV PATH=/root/miniconda/bin:${PATH}
+ENV PATH=/home/mkernel/miniconda/bin:${PATH}
 
 # Create python 3.8 environment
 RUN conda create -n py38 python=3.8
 
 SHELL ["/bin/bash", "-c"]
 
-RUN echo "source /root/miniconda/etc/profile.d/conda.sh && conda activate py38" >> ~/.bashrc
+RUN echo "source /home/mkernel/miniconda/etc/profile.d/conda.sh && conda activate py38" >> ~/.bashrc
 
 RUN python3 -m pip install notebook jupyterlab
+
+WORKDIR /home/mkernel
