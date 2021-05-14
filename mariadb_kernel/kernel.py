@@ -144,14 +144,18 @@ class MariaDBKernel(Kernel):
         return rv
 
     def num_connected_clients(self):
-        sql_query = "select count(id) from information_schema.processlist;"
+        sql_query = "show status like 'Threads_connected';"
         # If there is any errors we raise
         # (not much we can do if there is a error)
         result_html = self.mariadb_client.run_statement(code=sql_query)
         if self.mariadb_client.iserror():
-            raise Exception
-        df = pandas.read_html(result_html)
-        num_clients = int(df[0]["count(id)"][0])
+            raise Exception(f"Client returned an error : {result_html}")
+        try:
+            df = pandas.read_html(result_html)
+            num_clients = int(df[0]["Value"][0])
+        except Exception:
+            self.log.error(f"Pandas failed to parse html : {result_html}")
+            raise
 
         return num_clients
 
@@ -164,8 +168,8 @@ class MariaDBKernel(Kernel):
             try:
                 with open(pidfile, "r") as f:
                     pid = int(f.read())
-            except Exception:
-                self.log.error(f"Failed reading pid file {pidfile}")
+            except Exception as e:
+                self.log.error(f"Failed reading pid file {pidfile}, error: {e}")
                 return
 
             if pid:
@@ -179,9 +183,9 @@ class MariaDBKernel(Kernel):
         if self.client_config.start_server():
             try:
                 num_clients = self.num_connected_clients()
-            except Exception:
+            except Exception as e:
                 self.log.error(
-                    "Failed querying server (of number of clients connected)"
+                    f"Failed querying server (of number of clients connected), error: {e}"
                 )
 
         self.mariadb_client.stop()
