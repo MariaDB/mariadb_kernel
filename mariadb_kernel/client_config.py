@@ -125,9 +125,6 @@ class ClientConfig:
     def get_server_pidfile(self):
         return self.default_config["server_pid"]
 
-    def get_server_socketfile(self):
-        return self.default_config["socket"]
-
     def start_server(self):
         return self.default_config["start_server"] == "True"
 
