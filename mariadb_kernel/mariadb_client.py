@@ -102,7 +102,6 @@ class MariaDBClient:
             return ""
 
         result = ""
-        # TODO: double check exception handling
         try:
             result = self.maria_repl.run_command(code, timeout)
         except EOF as e:
@@ -141,8 +140,4 @@ class ServerIsDownError(Exception):
 
 
 class LoginError(Exception):
-    pass
-
-
-class ContinuationPromptError(Exception):
     pass

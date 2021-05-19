@@ -6,7 +6,6 @@ from ..mariadb_client import (
     MariaDBClient,
     ServerIsDownError,
     LoginError,
-    ContinuationPromptError,
 )
 from ..client_config import ClientConfig
 

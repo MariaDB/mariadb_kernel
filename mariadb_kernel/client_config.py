@@ -38,6 +38,7 @@ class ClientConfig:
             "extra_db_init_config": [
                 "--auth-root-authentication-method=normal",
             ],
+            "debug": "False",
         }
 
         self._load_config()
@@ -136,3 +137,6 @@ class ClientConfig:
 
     def db_init_bin(self):
         return self.default_config["db_init_bin"]
+
+    def debug_logging(self):
+        return self.default_config["debug"] == "True"

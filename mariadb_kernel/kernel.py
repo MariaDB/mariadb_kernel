@@ -9,7 +9,6 @@ from mariadb_kernel.client_config import ClientConfig
 from mariadb_kernel.mariadb_client import (
     MariaDBClient,
     ServerIsDownError,
-    ContinuationPromptError,
 )
 from mariadb_kernel.code_parser import CodeParser
 from mariadb_kernel.mariadb_server import MariaDBServer
@@ -36,12 +35,16 @@ class MariaDBKernel(Kernel):
 
     def __init__(self, **kwargs):
         Kernel.__init__(self, **kwargs)
-        self.log.setLevel(logging.INFO)
         self.delimiter = ";"
         self.client_config = ClientConfig(self.log)
         self.mariadb_client = MariaDBClient(self.log, self.client_config)
         self.mariadb_server = None
         self.data = {"last_select": pandas.DataFrame([])}
+
+        if self.client_config.debug_logging():
+            self.log.setLevel(logging.DEBUG)
+        else:
+            self.log.setLevel(logging.INFO)
 
         try:
             self.mariadb_client.start()
@@ -115,16 +118,7 @@ class MariaDBKernel(Kernel):
 
         statements = parser.get_sql()
         for s in statements:
-            try:
-                result = self.mariadb_client.run_statement(s)
-            except ContinuationPromptError:
-                self._send_message(
-                    "stderr",
-                    "We detected a continuation prompt in the output coming from the MariaDB Client.\n"
-                    + "Most probably you forgot to close the quotes for a string.\n"
-                    + "Please fix the error in the statement and try again.",
-                )
-                return rv
+            result = self.mariadb_client.run_statement(s)
 
             if self.mariadb_client.iserror():
                 self._send_message("stderr", self.mariadb_client.error_message())
