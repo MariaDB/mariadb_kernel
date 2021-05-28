@@ -2,23 +2,32 @@
 
 help_text = """
 The %load magic command has the following syntax:
-    > %load [csv file path] [be updated table name]
-The %load magic command can load CSV file for updating specific table data
+    > %load [csv file path] [table name] [skip row num](optional)
+The %load magic command can load CSV file for updating specific table data.
+1. This command does not create a table if the one specified as argument doesn't exist,
+   the user needs to create the destination table with the proper schema to match the data in the CSV file.
+2. CSV file first line may be header, can set [skip row num] to 1 for skipping.
+3. any argument can be enclosed by '' or "", handling string contains spaces.
 """
 
 from mariadb_kernel.maria_magics.line_magic import LineMagic
 import pandas
+import shlex
 
-# The class inherits LineMagic because it is a line magic command
-# Cell magic commands have to inherit the CellMagic class
+
 class Load(LineMagic):
     def __init__(self, args):
-        temp_args = args.split(" ")
+        args_list = shlex.split(args)
         self.csv_file_path = ""
         self.table_name = ""
-        if len(temp_args) == 2:
-            self.csv_file_path = args.split(" ")[0]
-            self.table_name = args.split(" ")[1]
+        self.skip_row_num = 0
+        if len(args_list) == 2:
+            self.csv_file_path = args_list[0]
+            self.table_name = args_list[1]
+        elif len(args_list) == 3:
+            self.csv_file_path = args_list[0]
+            self.table_name = args_list[1]
+            self.skip_row_num = args_list[2]
 
     def name(self):
         return "%load"
@@ -29,30 +38,29 @@ class Load(LineMagic):
     def execute(self, kernel, data):
         # for error handling
         if self.csv_file_path == "" or self.table_name == "":
-            err = "argument num must to be 2"
+            err = "argument num must to be 2 or 3, command need to be %load [csv file path] [table name] [skip row num](optional)"
             kernel._send_message("stderr", err)
             return
         try:
-            open(self.csv_file_path)
+            open(self.csv_file_path).close()
         except FileNotFoundError:
             err = "CSV file not found"
             kernel._send_message("stderr", err)
             return
-        # kernel.log.info(json.dumps(self.args))
-        data_frame = pandas.read_csv(self.csv_file_path)
-        cols_info = "(" + ",".join(str(v) for v in data_frame.columns) + ")"
-        rows = [
-            "(" + " ,".join(self.generate_value_str(v) for v in values) + ")"
-            for index, values in data_frame.iterrows()
-        ]
-        rows_info = ",".join(rows)
-        insert_sql = f"INSERT INTO {self.table_name} {cols_info} VALUES {rows_info};"
-        kernel.log.info(insert_sql)
-        insert_result: str = kernel.mariadb_client.run_statement(insert_sql)
-        # ERROR 1064 (42000): You have an error in your SQL syntax
-        if insert_result.startswith("ERROR 1064"):
-            err = "maybe CSV file not match the table schema, then can't insert into table"
-            kernel._send_message("stderr", err)
+
+        use_csv_update_table_cmd = f"""LOAD DATA LOCAL INFILE '{self.csv_file_path}'
+                       IGNORE
+                       INTO TABLE {self.table_name}
+                       FIELDS TERMINATED BY ','
+                       IGNORE {self.skip_row_num} LINES
+                       ;"""
+        kernel.mariadb_client.run_statement(use_csv_update_table_cmd)
+        if kernel.mariadb_client.iserror():
+            display_content = {
+                "data": {"text/html": str(kernel.mariadb_client.error_message())},
+                "metadata": {},
+            }
+            kernel.send_response(kernel.iopub_socket, "display_data", display_content)
             return
         result = kernel.mariadb_client.run_statement(
             f"select * from {self.table_name};"

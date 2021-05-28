@@ -12,3 +12,6 @@ __pycache__/
 
 # Ignore auto-updated version file
 mariadb_kernel/_version.py
+
+# Ignore vscode editor setting
+.vscode/
