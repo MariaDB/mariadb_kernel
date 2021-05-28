@@ -64,7 +64,7 @@ class Load(LineMagic):
             f"select * from {self.table_name} limit 5;"
         )
         display_content = {
-            "data": {"text/html": str(result + f"<b>...only show 5 rows<b/>")},
+            "data": {"text/html": str(result + f"<b>...<b/>")},
             "metadata": {},
         }
         kernel.send_response(kernel.iopub_socket, "display_data", display_content)
