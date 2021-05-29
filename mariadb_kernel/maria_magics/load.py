@@ -43,13 +43,6 @@ class Load(LineMagic):
             if len(self.args_list) > 2:
                 self.skip_row_num = int(self.args_list[3])
 
-        try:
-            open(self.csv_file_path).close()
-        except FileNotFoundError:
-            err = "CSV file not found"
-            kernel._send_message("stderr", err)
-            return
-
         use_csv_update_table_cmd = f"""LOAD DATA LOCAL INFILE '{self.csv_file_path}'
                        IGNORE
                        INTO TABLE {self.table_name}
