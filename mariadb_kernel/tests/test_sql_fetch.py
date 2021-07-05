@@ -136,8 +136,8 @@ def test_mariadb_sql_fetch_get_function_list(mariadb_server: Type[MariaDBServer]
     client.run_statement(f"use {db_name};")
 
     client.run_statement(
-        """CREATE FUNCTION hello (s CHAR(20)) 
-        RETURNS CHAR(50) DETERMINISTIC 
+        """CREATE FUNCTION hello (s CHAR(20))
+        RETURNS CHAR(50) DETERMINISTIC
         RETURN CONCAT('Hello, ',s,'!');"""
     )
 
