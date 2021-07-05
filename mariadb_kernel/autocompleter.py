@@ -34,6 +34,8 @@ class Refresher(object):
         completer.extend_show_items(executor.show_candidates())
 
     def refresh(self, executer: SqlFetch):
+        executer.update_db_name()
+
         completer = SQLAnalyze(True)
         self.refresh_databases(completer, executer)
         self.refresh_schemata(completer, executer)
@@ -43,7 +45,6 @@ class Refresher(object):
         self.refresh_special(completer, executer)
         self.refresh_show_commands(completer, executer)
 
-        executer.update_db_name()
         return completer
 
 
@@ -56,12 +57,11 @@ class Autocompleter(object):
     def refresh(self):
         self.completer = self.refresher.refresh(self.executer)
 
-    def get_suggestions(self, code: str, cursor_pos: int) -> List[str]:
+    def get_suggestions(self, code: str, cursor_pos: int):
         self.refresh()
         result = self.completer.get_completions(
             document=Document(text=code, cursor_position=cursor_pos),
             complete_event=None,
             smart_completion=True,
         )
-        str_list = [completion.text for completion in result]
-        return str_list
+        return list(result)
