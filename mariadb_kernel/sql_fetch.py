@@ -8,27 +8,6 @@ import math
 
 
 class SqlFetch:
-    databases_query = """SHOW DATABASES;"""
-
-    tables_query = """SHOW TABLES;"""
-
-    show_candidates_query = (
-        'SELECT name from mysql.help_topic WHERE name like "SHOW %";'
-    )
-
-    users_query = """SELECT CONCAT("'", user, "'@'",host,"'") FROM mysql.user;"""
-
-    functions_query = """SELECT ROUTINE_NAME FROM INFORMATION_SCHEMA.ROUTINES
-    WHERE ROUTINE_TYPE="FUNCTION" AND ROUTINE_SCHEMA = "%s";"""
-
-    table_columns_query = """select TABLE_NAME, COLUMN_NAME from information_schema.columns
-                                    where table_schema = '%s'
-                                    order by table_name,ordinal_position;"""
-
-    connected_client_num_query = "show status like 'Threads_connected';"
-
-    current_use_database_query = "SELECT DATABASE();"
-
     def __init__(self, maridb_client: MariaDBClient, log: logging.Logger) -> None:
         self.maridb_client = maridb_client
         self.log = log
@@ -50,38 +29,45 @@ class SqlFetch:
         return str_list
 
     def databases(self) -> List[str]:
+        databases_query = """SHOW DATABASES;"""
         return self.fetch_info(
-            self.databases_query, lambda df: list(df[0]["Database"].values)
+            databases_query, lambda df: list(df[0]["Database"].values)
         )
 
     def tables(self):
         # tables_query
+        tables_query = """SHOW TABLES;"""
         if self.dbname == "":
             return []
         return [
             (name,)
             for name in self.fetch_info(
-                self.tables_query, lambda df: list(df[0][df[0].columns[0]].values)
+                tables_query, lambda df: list(df[0][df[0].columns[0]].values)
             )
         ]
 
     def show_candidates(self):
         # show_candidates_query
+        show_candidates_query = """SELECT name from mysql.help_topic 
+                                               WHERE name like "SHOW %";"""
+
         # remove show prefix
         return [
             (name.split(None, 1)[-1],)
             for name in self.fetch_info(
-                self.show_candidates_query,
+                show_candidates_query,
                 lambda df: list(df[0][df[0].columns[0]].values),
             )
         ]
 
     def users(self):
         # users_query
+        users_query = """SELECT CONCAT("'", user, "'@'",host,"'") 
+                                FROM mysql.user;"""
         return [
             (name,)
             for name in self.fetch_info(
-                self.users_query, lambda df: list(df[0][df[0].columns[0]].values)
+                users_query, lambda df: list(df[0][df[0].columns[0]].values)
             )
         ]
 
@@ -89,10 +75,13 @@ class SqlFetch:
         # functions_query
         if self.dbname == "":
             return []
+        functions_query = """SELECT ROUTINE_NAME FROM INFORMATION_SCHEMA.ROUTINES
+                                                 WHERE ROUTINE_TYPE="FUNCTION" 
+                                                       AND ROUTINE_SCHEMA = "%s";"""
         return [
             (name,)
             for name in self.fetch_info(
-                self.functions_query % self.dbname,
+                functions_query % self.dbname,
                 lambda df: list(df[0][df[0].columns[0]].values),
             )
         ]
@@ -101,8 +90,11 @@ class SqlFetch:
         # table_columns_query
         if self.dbname == "":
             return []
+        table_columns_query = """select TABLE_NAME, COLUMN_NAME from information_schema.columns
+                                                                where table_schema = '%s'
+                                                                order by table_name,ordinal_position;"""
         result_html = self.maridb_client.run_statement(
-            self.table_columns_query % self.dbname
+            table_columns_query % self.dbname
         )
         if self.maridb_client.iserror():
             raise Exception(f"Client returned an error : {result_html}")
@@ -122,15 +114,17 @@ class SqlFetch:
         return table_column_list
 
     def num_connected_clients(self):
+        connected_client_num_query = "show status like 'Threads_connected';"
         str_list = self.fetch_info(
-            self.connected_client_num_query, lambda df: list(df[0]["Value"].values)
+            connected_client_num_query, lambda df: list(df[0]["Value"].values)
         )
         return int(str_list[0])
 
     def get_db_name(self):
         # functions_query
+        current_use_database_query = "SELECT DATABASE();"
         result = self.fetch_info(
-            self.current_use_database_query,
+            current_use_database_query,
             lambda df: list(df[0][df[0].columns[0]].values),
         )[0]
         if type(result) != str:

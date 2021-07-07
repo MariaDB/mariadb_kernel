@@ -8,54 +8,57 @@ from prompt_toolkit.document import Document
 
 
 class Refresher(object):
-    def refresh_databases(self, completer: SQLAnalyze, executor: SqlFetch):
-        completer.extend_database_names(executor.databases())
+    def __init__(self, executor: SqlFetch) -> None:
+        self.executor = executor
 
-    def refresh_schemata(self, completer: SQLAnalyze, executor: SqlFetch):
+    def refresh_databases(self):
+        self.completer.extend_database_names(self.executor.databases())
+
+    def refresh_schemata(self):
         # schemata - In MySQL Schema is the same as database. But for mycli
         # schemata will be the name of the current database.
-        completer.extend_schemata(executor.dbname)
-        completer.set_dbname(executor.dbname)
+        self.completer.extend_schemata(self.executor.dbname)
+        self.completer.set_dbname(self.executor.dbname)
 
-    def refresh_tables(self, completer: SQLAnalyze, executor: SqlFetch):
-        completer.extend_relations(executor.tables(), kind="tables")
-        completer.extend_columns(executor.table_columns(), kind="tables")
+    def refresh_tables(self):
+        self.completer.extend_relations(self.executor.tables(), kind="tables")
+        self.completer.extend_columns(self.executor.table_columns(), kind="tables")
 
-    def refresh_users(self, completer: SQLAnalyze, executor: SqlFetch):
-        completer.extend_users(executor.users())
+    def refresh_users(self):
+        self.completer.extend_users(self.executor.users())
 
-    def refresh_functions(self, completer: SQLAnalyze, executor: SqlFetch):
-        completer.extend_functions(executor.functions())
+    def refresh_functions(self):
+        self.completer.extend_functions(self.executor.functions())
 
-    def refresh_special(self, completer: SQLAnalyze, executor: SqlFetch):
-        completer.extend_special_commands(COMMANDS.keys())
+    def refresh_special(self):
+        self.completer.extend_special_commands(COMMANDS.keys())
 
-    def refresh_show_commands(self, completer: SQLAnalyze, executor: SqlFetch):
-        completer.extend_show_items(executor.show_candidates())
+    def refresh_show_commands(self):
+        self.completer.extend_show_items(self.executor.show_candidates())
 
-    def refresh(self, executer: SqlFetch):
-        executer.update_db_name()
+    def refresh(self):
+        self.executor.update_db_name()
 
-        completer = SQLAnalyze(True)
-        self.refresh_databases(completer, executer)
-        self.refresh_schemata(completer, executer)
-        self.refresh_tables(completer, executer)
-        self.refresh_users(completer, executer)
-        self.refresh_functions(completer, executer)
-        self.refresh_special(completer, executer)
-        self.refresh_show_commands(completer, executer)
+        self.completer = SQLAnalyze(True)
+        self.refresh_databases()
+        self.refresh_schemata()
+        self.refresh_tables()
+        self.refresh_users()
+        self.refresh_functions()
+        self.refresh_special()
+        self.refresh_show_commands()
 
-        return completer
+        return self.completer
 
 
 class Autocompleter(object):
     def __init__(self, mariadb_client: MariaDBClient, log: Logger) -> None:
-        self.refresher = Refresher()
-        self.executer = SqlFetch(mariadb_client, log)
-        self.completer = self.refresher.refresh(self.executer)
+        self.executor = SqlFetch(mariadb_client, log)
+        self.refresher = Refresher(self.executor)
+        self.completer = self.refresher.refresh()
 
     def refresh(self):
-        self.completer = self.refresher.refresh(self.executer)
+        self.completer = self.refresher.refresh()
 
     def get_suggestions(self, code: str, cursor_pos: int):
         self.refresh()
