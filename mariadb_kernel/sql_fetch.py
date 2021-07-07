@@ -48,7 +48,7 @@ class SqlFetch:
 
     def show_candidates(self):
         # show_candidates_query
-        show_candidates_query = """SELECT name from mysql.help_topic 
+        show_candidates_query = """SELECT name from mysql.help_topic
                                                WHERE name like "SHOW %";"""
 
         # remove show prefix
@@ -62,7 +62,7 @@ class SqlFetch:
 
     def users(self):
         # users_query
-        users_query = """SELECT CONCAT("'", user, "'@'",host,"'") 
+        users_query = """SELECT CONCAT("'", user, "'@'",host,"'")
                                 FROM mysql.user;"""
         return [
             (name,)
@@ -76,7 +76,7 @@ class SqlFetch:
         if self.dbname == "":
             return []
         functions_query = """SELECT ROUTINE_NAME FROM INFORMATION_SCHEMA.ROUTINES
-                                                 WHERE ROUTINE_TYPE="FUNCTION" 
+                                                 WHERE ROUTINE_TYPE="FUNCTION"
                                                        AND ROUTINE_SCHEMA = "%s";"""
         return [
             (name,)
