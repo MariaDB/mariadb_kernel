@@ -66,7 +66,6 @@ class MariaDBKernel(Kernel):
             # Reconnect the client now that the server is up
             if self.mariadb_server.is_up():
                 self.mariadb_client.start()
-        self.mariadb_client.run_statement("use test;")
 
     def get_delimiter(self):
         return self.delimiter

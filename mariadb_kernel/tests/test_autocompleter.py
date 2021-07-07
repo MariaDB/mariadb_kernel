@@ -195,7 +195,6 @@ def test_mariadb_autocompleter_username_at_hostname_suggestion(
     # not complete
     assert set(
         [
-            "'root'@'127.0.0.1'",
             "'root'@'localhost'",
             "'foo2'@'test'",
         ]

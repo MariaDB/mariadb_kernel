@@ -4,6 +4,7 @@ import pandas
 from pandas.core.frame import DataFrame
 from mariadb_kernel.mariadb_client import MariaDBClient
 import logging
+import math
 
 
 class SqlFetch:
@@ -33,7 +34,7 @@ class SqlFetch:
         self.log = log
         self.update_db_name()
 
-    def fetch_info(self, query: str, function: Callable[[List[DataFrame]], List[str]]):
+    def fetch_info(self, query: str, function: Callable[[List[DataFrame]], List]):
         result_html = self.maridb_client.run_statement(query)
         if self.maridb_client.iserror():
             raise Exception(f"Client returned an error : {result_html}")
@@ -55,6 +56,8 @@ class SqlFetch:
 
     def tables(self):
         # tables_query
+        if self.dbname == "":
+            return []
         return [
             (name,)
             for name in self.fetch_info(
@@ -84,6 +87,8 @@ class SqlFetch:
 
     def functions(self):
         # functions_query
+        if self.dbname == "":
+            return []
         return [
             (name,)
             for name in self.fetch_info(
@@ -94,6 +99,8 @@ class SqlFetch:
 
     def table_columns(self) -> List[Tuple[str, str]]:
         # table_columns_query
+        if self.dbname == "":
+            return []
         result_html = self.maridb_client.run_statement(
             self.table_columns_query % self.dbname
         )
@@ -122,10 +129,14 @@ class SqlFetch:
 
     def get_db_name(self):
         # functions_query
-        return self.fetch_info(
+        result = self.fetch_info(
             self.current_use_database_query,
             lambda df: list(df[0][df[0].columns[0]].values),
         )[0]
+        if type(result) != str:
+            if math.isnan(result):
+                return ""
+        return result
 
     def change_db_name(self, db):
         self.dbname = db

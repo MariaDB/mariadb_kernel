@@ -20,7 +20,7 @@ def test_mariadb_sql_fetch_get_database_list(mariadb_server: Type[MariaDBServer]
     client.start()
     sql_fetch = SqlFetch(client, mocklog)
 
-    assert set(["information_schema", "mysql", "test", "performance_schema"]).issubset(
+    assert set(["information_schema", "mysql", "performance_schema"]).issubset(
         sql_fetch.databases()
     )
 
@@ -46,6 +46,22 @@ def test_mariadb_sql_fetch_get_table_list(mariadb_server: Type[MariaDBServer]):
 
     client.run_statement("drop database t1;")
 
+def test_mariadb_sql_fetch_get_table_list_when_no_select_database(mariadb_server: Type[MariaDBServer]):
+    mocklog = Mock()
+    cfg = ClientConfig(mocklog, name="nonexistentcfg.json")  # default config
+
+    mariadb_server(mocklog, cfg)
+
+    client = MariaDBClient(mocklog, cfg)
+    client.start()
+    sql_fetch = SqlFetch(client, mocklog)
+
+    unittest.TestCase().assertListEqual(
+        sql_fetch.tables(),
+        [],
+    )
+
+    client.run_statement("drop database t1;")
 
 def test_mariadb_sql_fetch_get_show_candiates(mariadb_server: Type[MariaDBServer]):
     mocklog = Mock()
@@ -117,9 +133,7 @@ def test_mariadb_sql_fetch_get_user_list(mariadb_server: Type[MariaDBServer]):
     client.start()
     sql_fetch = SqlFetch(client, mocklog)
 
-    assert set(["'root'@'127.0.0.1'", "''@'localhost'", "'root'@'localhost'"]).issubset(
-        t[0] for t in sql_fetch.users()
-    )
+    assert set(["'root'@'localhost'"]).issubset([t[0] for t in sql_fetch.users()])
 
 
 def test_mariadb_sql_fetch_get_function_list(mariadb_server: Type[MariaDBServer]):
@@ -198,3 +212,18 @@ def test_mariadb_sql_fetch_get_current_used_database_name(
     sql_fetch = SqlFetch(client, mocklog)
 
     assert sql_fetch.get_db_name() == "test"
+
+
+def test_mariadb_sql_fetch_get_current_used_database_name_for_no_select_database(
+    mariadb_server: Type[MariaDBServer],
+):
+    mocklog = Mock()
+    cfg = ClientConfig(mocklog)  # default config
+
+    mariadb_server(mocklog, cfg)
+
+    client = MariaDBClient(mocklog, cfg)
+    client.start()
+    sql_fetch = SqlFetch(client, mocklog)
+
+    assert sql_fetch.get_db_name() == ""
