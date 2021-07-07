@@ -46,7 +46,10 @@ def test_mariadb_sql_fetch_get_table_list(mariadb_server: Type[MariaDBServer]):
 
     client.run_statement("drop database t1;")
 
-def test_mariadb_sql_fetch_get_table_list_when_no_select_database(mariadb_server: Type[MariaDBServer]):
+
+def test_mariadb_sql_fetch_get_table_list_when_no_select_database(
+    mariadb_server: Type[MariaDBServer],
+):
     mocklog = Mock()
     cfg = ClientConfig(mocklog, name="nonexistentcfg.json")  # default config
 
@@ -62,6 +65,7 @@ def test_mariadb_sql_fetch_get_table_list_when_no_select_database(mariadb_server
     )
 
     client.run_statement("drop database t1;")
+
 
 def test_mariadb_sql_fetch_get_show_candiates(mariadb_server: Type[MariaDBServer]):
     mocklog = Mock()
