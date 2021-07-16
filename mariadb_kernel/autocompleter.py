@@ -61,7 +61,7 @@ class Autocompleter(object):
         self.completer = self.refresher.refresh()
 
     def get_suggestions(self, code: str, cursor_pos: int):
-        self.refresh()
+        # self.refresh()
         result = self.completer.get_completions(
             document=Document(text=code, cursor_position=cursor_pos),
             complete_event=None,

@@ -67,6 +67,8 @@ class MariaDBKernel(Kernel):
             if self.mariadb_server.is_up():
                 self.mariadb_client.start()
 
+        self.autocompleter = Autocompleter(self.mariadb_client, self.log)
+
     def get_delimiter(self):
         return self.delimiter
 
@@ -135,7 +137,8 @@ class MariaDBKernel(Kernel):
                 self.send_response(self.iopub_socket, "display_data", display_content)
 
         self._execute_magics(parser.get_magics())
-
+        if self.autocompleter:
+            self.autocompleter.refresh()
         return rv
 
     def num_connected_clients(self):
@@ -195,7 +198,7 @@ class MariaDBKernel(Kernel):
             self.autocompleter = Autocompleter(self.mariadb_client, self.log)
         completion_list = self.autocompleter.get_suggestions(code, cursor_pos)
         match_text_list = [completion.text for completion in completion_list]
-        self.log.info("match_text_list", match_text_list)
+        self.log.info(f"match_text_list: {match_text_list}")
         offset = 0
         if len(completion_list) > 0:
             offset = completion_list[
