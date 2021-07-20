@@ -113,6 +113,28 @@ class SqlFetch:
             raise
         return table_column_list
 
+    def keywords(self) -> List[str]:
+        # need consider no information_schema.keywords table
+        fetch_keywords_query = "select word from information_schema.keywords;"
+        try:
+            result = self.fetch_info(
+                fetch_keywords_query, lambda df: list(df[0]["word"])
+            )
+            return list(filter(lambda ele: type(ele) is not float, result))
+        except Exception as e:
+            return []
+
+    def sql_functions(self) -> List[str]:
+        # need consider no information_schema.keywords table
+        fetch_keywords_query = "select function from information_schema.sql_functions;"
+        try:
+            result = self.fetch_info(
+                fetch_keywords_query, lambda df: list(df[0]["function"])
+            )
+            return list(filter(lambda ele: type(ele) is not float, result))
+        except Exception as e:
+            return []
+
     def num_connected_clients(self):
         connected_client_num_query = "show status like 'Threads_connected';"
         str_list = self.fetch_info(

@@ -10,6 +10,8 @@ from prompt_toolkit.document import Document
 class Refresher(object):
     def __init__(self, executor: SqlFetch) -> None:
         self.executor = executor
+        self.fetch_keywords = self.executor.keywords()
+        self.fetch_functions = self.executor.sql_functions()
 
     def refresh_databases(self):
         self.completer.extend_database_names(self.executor.databases())
@@ -48,6 +50,8 @@ class Refresher(object):
         self.refresh_special()
         self.refresh_show_commands()
 
+        self.completer.set_keywords(self.fetch_keywords)
+        self.completer.set_functions(self.fetch_functions)
         return self.completer
 
 
