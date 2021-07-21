@@ -89,6 +89,7 @@ def suggest_type(full_text, text_before_cursor):
     # this is for database suggestion. Combined with a token after text cursor
     # ex: 「insert into .t1」 when cursor after 「insert into 」
     full_text_parsed_result = sqlparse.parse(full_text[len(text_before_cursor) :])
+    word_before_cursor_parsed_result = sqlparse.parse(word_before_cursor)
     if len(full_text_parsed_result) > 0:
         parsed_back = full_text_parsed_result[0]
         if len(parsed_back.tokens) > 0:
@@ -104,6 +105,25 @@ def suggest_type(full_text, text_before_cursor):
             ):
                 # need suggest database type
                 return [{"type": "database", "table": table}]
+    if word_before_cursor.startswith("@@"):
+        word_before_cursor_parsed_result = sqlparse.parse(word_before_cursor)
+        if len(word_before_cursor_parsed_result) > 0:
+            tokens = word_before_cursor_parsed_result[0].tokens
+            token_num = len(tokens)
+            if token_num == 1:
+                # only @@
+                return [{"type": "session", "scope": "both"}]
+            elif token_num == 2:
+                # @@adsjfoj => just the text is neither global nor session 
+                # @@global.
+                # @@session.
+                if tokens[1].value == "global.":
+                    return [{"type": "session", "scope": "global"}] 
+                elif tokens[1].value == "session.":
+                    return [{"type": "session", "scope": "session"}]  
+                else:
+                    # may need more work such as suggestion global or session text!!
+                    return [{"type": "session", "scope": "both"}] 
 
     return suggest_based_on_last_token(
         last_token, text_before_cursor, full_text, identifier
