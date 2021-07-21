@@ -1226,7 +1226,8 @@ def test_mariadb_sql_fetch_global_variables(mariadb_server: Type[MariaDBServer])
     client = MariaDBClient(mocklog, cfg)
     client.start()
     sql_fetch = SqlFetch(client, mocklog)
-    assert set(["innodb_sync_spin_loops"]).issubset(sql_fetch.global_variables()) 
+    assert set(["innodb_sync_spin_loops"]).issubset(sql_fetch.global_variables())
+
 
 def test_mariadb_sql_fetch_session_variables(mariadb_server: Type[MariaDBServer]):
     mocklog = Mock()
@@ -1237,4 +1238,4 @@ def test_mariadb_sql_fetch_session_variables(mariadb_server: Type[MariaDBServer]
     client = MariaDBClient(mocklog, cfg)
     client.start()
     sql_fetch = SqlFetch(client, mocklog)
-    assert set(["alter_algorithm"]).issubset(sql_fetch.session_variables()) 
+    assert set(["alter_algorithm"]).issubset(sql_fetch.session_variables())

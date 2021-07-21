@@ -295,3 +295,143 @@ def test_mariadb_autocompleter_database_before_table_name_under_partial_database
     )
     client.run_statement("drop database da1;")
     client.run_statement("drop database db2;")
+
+
+def test_mariadb_autocompleter_variables_suggestion_with_empty_text(
+    mariadb_server: Type[MariaDBServer],
+):
+    mocklog = Mock()
+    cfg = ClientConfig(mocklog, name="nonexistentcfg.json")  # default config
+
+    mariadb_server(mocklog, cfg)
+
+    client = MariaDBClient(mocklog, cfg)
+    client.start()
+    autocompleter = Autocompleter(client, mocklog)
+    autocompleter.refresh()
+
+    # check no duplicate
+    assert (
+        len(
+            list(
+                filter(
+                    lambda text: text == "character_set_database",
+                    get_text_list(
+                        autocompleter.get_suggestions("select @@", len("select @@"))
+                    ),
+                )
+            )
+        )
+        < 2
+    )
+    # jsut test part of variable
+    set(
+        [
+            "character_set_connection",
+            "datadir",
+            "date_format",
+            "extra_max_connections",
+            "max_error_count",
+            "time_zone",
+        ]
+    ).issubset(
+        get_text_list(autocompleter.get_suggestions("select @@", len("select @@")))
+    )
+
+
+def test_mariadb_autocompleter_variables_suggestion_with_some_text(
+    mariadb_server: Type[MariaDBServer],
+):
+    mocklog = Mock()
+    cfg = ClientConfig(mocklog, name="nonexistentcfg.json")  # default config
+
+    mariadb_server(mocklog, cfg)
+
+    client = MariaDBClient(mocklog, cfg)
+    client.start()
+    autocompleter = Autocompleter(client, mocklog)
+    autocompleter.refresh()
+
+    # jsut test part of variable
+    unittest.TestCase().assertListEqual(
+        [
+            "query_alloc_block_size",
+            "query_cache_limit",
+            "query_cache_min_res_unit",
+            "query_cache_size",
+            "query_cache_strip_comments",
+            "query_cache_type",
+            "query_cache_wlock_invalidate",
+            "query_prealloc_size",
+        ],
+        get_text_list(
+            autocompleter.get_suggestions("select @@query_", len("select @@query_"))
+        ),
+    )
+
+
+def test_mariadb_autocompleter_global_variables_suggestion(
+    mariadb_server: Type[MariaDBServer],
+):
+    mocklog = Mock()
+    cfg = ClientConfig(mocklog, name="nonexistentcfg.json")  # default config
+
+    mariadb_server(mocklog, cfg)
+
+    client = MariaDBClient(mocklog, cfg)
+    client.start()
+    autocompleter = Autocompleter(client, mocklog)
+    autocompleter.refresh()
+    # jsut test part of variable
+    unittest.TestCase().assertListEqual(
+        ["report_host"],
+        get_text_list(
+            autocompleter.get_suggestions(
+                "select @@global.report_h", len("select @@global.report_h")
+            )
+        ),
+    )
+
+
+def test_mariadb_autocompleter_global_variables_no_session_variable(
+    mariadb_server: Type[MariaDBServer],
+):
+    mocklog = Mock()
+    cfg = ClientConfig(mocklog, name="nonexistentcfg.json")  # default config
+
+    mariadb_server(mocklog, cfg)
+
+    client = MariaDBClient(mocklog, cfg)
+    client.start()
+    autocompleter = Autocompleter(client, mocklog)
+    autocompleter.refresh()
+    # jsut test part of variable
+    unittest.TestCase().assertNotIn(
+        "error_count",
+        get_text_list(
+            autocompleter.get_suggestions("select @@global.", len("select @@global."))
+        ),
+    )
+
+
+def test_mariadb_autocompleter_global_variables_no_session_variable_with_text(
+    mariadb_server: Type[MariaDBServer],
+):
+    mocklog = Mock()
+    cfg = ClientConfig(mocklog, name="nonexistentcfg.json")  # default config
+
+    mariadb_server(mocklog, cfg)
+
+    client = MariaDBClient(mocklog, cfg)
+    client.start()
+    autocompleter = Autocompleter(client, mocklog)
+    autocompleter.refresh()
+    # jsut test part of variable
+    unittest.TestCase().assertNotIn(
+        "error_count",
+        get_text_list(
+            autocompleter.get_suggestions(
+                "select @@global.err", len("select @@global.err")
+            )
+        ),
+    )

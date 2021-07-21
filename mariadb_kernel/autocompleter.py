@@ -8,10 +8,11 @@ from prompt_toolkit.document import Document
 
 
 class Refresher(object):
-    def __init__(self, executor: SqlFetch) -> None:
+    def __init__(self, executor: SqlFetch, log: Logger) -> None:
         self.executor = executor
         self.fetch_keywords = self.executor.keywords()
         self.fetch_functions = self.executor.sql_functions()
+        self.log = log
 
     def refresh_databases(self):
         self.completer.extend_database_names(self.executor.databases())
@@ -41,10 +42,14 @@ class Refresher(object):
     def refresh_database_tables(self):
         self.completer.extend_tables(self.executor.database_tables())
 
+    def refresh_variables(self):
+        self.completer.extend_global_variables(self.executor.global_variables())
+        self.completer.extend_session_variables(self.executor.session_variables())
+
     def refresh(self):
         self.executor.update_db_name()
 
-        self.completer = SQLAnalyze(True)
+        self.completer = SQLAnalyze(self.log, True)
         self.refresh_databases()
         self.refresh_schemata()
         self.refresh_tables()
@@ -53,6 +58,7 @@ class Refresher(object):
         self.refresh_special()
         self.refresh_show_commands()
         self.refresh_database_tables()
+        self.refresh_variables()
 
         self.completer.set_keywords(self.fetch_keywords)
         self.completer.set_functions(self.fetch_functions)
@@ -62,14 +68,18 @@ class Refresher(object):
 class Autocompleter(object):
     def __init__(self, mariadb_client: MariaDBClient, log: Logger) -> None:
         self.executor = SqlFetch(mariadb_client, log)
-        self.refresher = Refresher(self.executor)
+        self.refresher = Refresher(self.executor, log)
         self.completer = self.refresher.refresh()
+        self.log = log
 
     def refresh(self):
         self.completer = self.refresher.refresh()
 
     def get_suggestions(self, code: str, cursor_pos: int):
         # self.refresh()
+        self.log.info(
+            f"self.completer.global_variable : {self.completer.global_variable}"
+        )
         result = self.completer.get_completions(
             document=Document(text=code, cursor_position=cursor_pos),
             complete_event=None,

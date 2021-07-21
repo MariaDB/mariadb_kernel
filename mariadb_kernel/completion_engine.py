@@ -114,16 +114,16 @@ def suggest_type(full_text, text_before_cursor):
                 # only @@
                 return [{"type": "session", "scope": "both"}]
             elif token_num == 2:
-                # @@adsjfoj => just the text is neither global nor session 
+                # @@adsjfoj => just the text is neither global nor session
                 # @@global.
                 # @@session.
-                if tokens[1].value == "global.":
-                    return [{"type": "session", "scope": "global"}] 
-                elif tokens[1].value == "session.":
-                    return [{"type": "session", "scope": "session"}]  
+                if tokens[1].value.startswith("global."):
+                    return [{"type": "session", "scope": "global"}]
+                elif tokens[1].value.startswith("session."):
+                    return [{"type": "session", "scope": "session"}]
                 else:
                     # may need more work such as suggestion global or session text!!
-                    return [{"type": "session", "scope": "both"}] 
+                    return [{"type": "session", "scope": "both"}]
 
     return suggest_based_on_last_token(
         last_token, text_before_cursor, full_text, identifier

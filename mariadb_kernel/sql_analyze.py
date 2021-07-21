@@ -953,7 +953,7 @@ class SQLAnalyze(Completer):
     users = []
 
     def __init__(
-        self, smart_completion=True, supported_formats=(), keyword_casing="auto"
+        self, log, smart_completion=True, supported_formats=(), keyword_casing="auto"
     ):
         self.smart_completion = smart_completion
         self.reserved_words = set()
@@ -969,6 +969,7 @@ class SQLAnalyze(Completer):
         self.reset_completions()
         self.set_keywords(default_keywords)
         self.set_functions(default_functions)
+        self.log = log
 
     # can't set empty list
     def set_keywords(self, keywords: List[str]):
@@ -1137,12 +1138,20 @@ class SQLAnalyze(Completer):
         for database, table in table_data:
             self.database_tables.append((database, table))
 
+    def extend_global_variables(self, variable_data):
+        self.global_variable.extend(variable_data)
+
+    def extend_session_variables(self, variable_data):
+        self.session_variable.extend(variable_data)
+
     def set_dbname(self, dbname):
         self.dbname = dbname
 
     def reset_completions(self):
         self.databases = []
         self.database_tables: List[Tuple[str, str]] = []
+        self.global_variable: List[str] = []
+        self.session_variable: List[str] = []
         self.users = []
         self.show_items = []
         self.dbname = ""
@@ -1340,6 +1349,31 @@ class SQLAnalyze(Completer):
             elif suggestion["type"] == "file_name":
                 file_names = self.find_files(word_before_cursor)
                 completions.extend(file_names)
+            elif suggestion["type"] == "session":
+                # [{'scope': 'both', 'type': 'session'}]
+                # scope can be both, global, session
+                # use set because global_variable would overlap with session_variable
+                variable_list = set()
+                self.log.info(f"suggestion: {suggestion}")
+                if suggestion["scope"] == "global":
+                    variable_list = {*variable_list, *self.global_variable}
+                elif suggestion["scope"] == "session":
+                    variable_list = {*variable_list, *self.session_variable}
+                else:
+                    variable_list = {
+                        *variable_list,
+                        *self.global_variable,
+                        *self.session_variable,
+                    }
+                # word_before_cursor would be @@
+                word = (
+                    word_before_cursor.replace("@@global.", "")
+                    .replace("@@session.", "")
+                    .replace("@@", "")
+                )
+                self.log.info(f"word: {word}")
+                variables = self.find_matches(word, list(variable_list))
+                completions.extend(variables)
 
         return completions
 

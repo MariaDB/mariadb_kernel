@@ -165,7 +165,7 @@ class SqlFetch:
             self.log.error(f"Pandas failed to parse html : {result_html}")
             raise
         return database_table_list
-    
+
     def global_variables(self):
         global_variables_query = "show global VARIABLES;"
         return self.fetch_info(
@@ -173,7 +173,7 @@ class SqlFetch:
         )
 
     def session_variables(self):
-        session_variables_query = "show global VARIABLES;"
+        session_variables_query = "show session VARIABLES;"
         return self.fetch_info(
             session_variables_query, lambda df: list(df[0]["Variable_name"])
         )
