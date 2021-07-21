@@ -363,6 +363,12 @@ def test_mariadb_autocompleter_variables_suggestion_with_some_text(
             "query_cache_type",
             "query_cache_wlock_invalidate",
             "query_prealloc_size",
+            "ft_query_expansion_limit",
+            "have_query_cache",
+            "long_query_time",
+            "slow_query_log",
+            "slow_query_log_file",
+            "expensive_subquery_limit"
         ],
         get_text_list(
             autocompleter.get_suggestions("select @@query_", len("select @@query_"))
