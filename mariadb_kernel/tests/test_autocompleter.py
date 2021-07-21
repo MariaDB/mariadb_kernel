@@ -256,8 +256,7 @@ def test_mariadb_autocompleter_database_before_table_name_under_emtpy_table_name
     autocompleter = Autocompleter(client, mocklog)
     autocompleter.refresh()
 
-    unittest.TestCase().assertListEqual(
-        ["d1", "d2"],
+    set(["d1", "d2"]).issubset(
         get_text_list(
             autocompleter.get_suggestions("insert into .", len("insert into "))
         ),
