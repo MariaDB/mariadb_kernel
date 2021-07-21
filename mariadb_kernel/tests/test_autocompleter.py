@@ -226,8 +226,10 @@ def test_mariadb_autocompleter_database_before_table_name(
 
     unittest.TestCase().assertListEqual(
         ["d2"],
-        get_text_list(autocompleter.get_suggestions("insert into .haha1", len("insert into ")))
-    )   
+        get_text_list(
+            autocompleter.get_suggestions("insert into .haha1", len("insert into "))
+        ),
+    )
 
     client.run_statement("drop database d1;")
     client.run_statement("drop database d2;")
@@ -255,8 +257,10 @@ def test_mariadb_autocompleter_database_before_table_name_under_emtpy_table_name
     autocompleter.refresh()
 
     unittest.TestCase().assertListEqual(
-        ["d1","d2"],
-        get_text_list(autocompleter.get_suggestions("insert into .", len("insert into ")))
+        ["d1", "d2"],
+        get_text_list(
+            autocompleter.get_suggestions("insert into .", len("insert into "))
+        ),
     )
 
     client.run_statement("drop database d1;")
@@ -286,7 +290,9 @@ def test_mariadb_autocompleter_database_before_table_name_under_partial_database
 
     unittest.TestCase().assertListEqual(
         ["da1"],
-         get_text_list(autocompleter.get_suggestions("insert into da.", len("insert into da")))
+        get_text_list(
+            autocompleter.get_suggestions("insert into da.", len("insert into da"))
+        ),
     )
     client.run_statement("drop database da1;")
     client.run_statement("drop database db2;")
