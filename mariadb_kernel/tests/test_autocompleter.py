@@ -201,3 +201,92 @@ def test_mariadb_autocompleter_username_at_hostname_suggestion(
     ).issubset(get_text_list(autocompleter.get_suggestions("ALTER USER ", 11)))
 
     client.run_statement("drop foo2@test;")
+
+
+def test_mariadb_autocompleter_database_before_table_name(
+    mariadb_server: Type[MariaDBServer],
+):
+    mocklog = Mock()
+    cfg = ClientConfig(mocklog, name="nonexistentcfg.json")  # default config
+
+    mariadb_server(mocklog, cfg)
+
+    client = MariaDBClient(mocklog, cfg)
+    client.start()
+    client.run_statement("create database d1;")
+    client.run_statement("use d1;")
+    client.run_statement("create table t1(a int, b int);")
+    client.run_statement("create table t2(a int, b int);")
+    client.run_statement("create database d2;")
+    client.run_statement("use d2;")
+    client.run_statement("create table haha1(a int, b int);")
+    client.run_statement("create table haha2(a int, b int);")
+    autocompleter = Autocompleter(client, mocklog)
+    autocompleter.refresh()
+
+    unittest.TestCase().assertListEqual(
+        ["d2"],
+        get_text_list(autocompleter.get_suggestions("insert into .haha1", len("insert into ")))
+    )   
+
+    client.run_statement("drop database d1;")
+    client.run_statement("drop database d2;")
+
+
+def test_mariadb_autocompleter_database_before_table_name_under_emtpy_table_name(
+    mariadb_server: Type[MariaDBServer],
+):
+    mocklog = Mock()
+    cfg = ClientConfig(mocklog, name="nonexistentcfg.json")  # default config
+
+    mariadb_server(mocklog, cfg)
+
+    client = MariaDBClient(mocklog, cfg)
+    client.start()
+    client.run_statement("create database d1;")
+    client.run_statement("use d1;")
+    client.run_statement("create table t1(a int, b int);")
+    client.run_statement("create table t2(a int, b int);")
+    client.run_statement("create database d2;")
+    client.run_statement("use d2;")
+    client.run_statement("create table haha1(a int, b int);")
+    client.run_statement("create table haha2(a int, b int);")
+    autocompleter = Autocompleter(client, mocklog)
+    autocompleter.refresh()
+
+    unittest.TestCase().assertListEqual(
+        ["d1","d2"],
+        get_text_list(autocompleter.get_suggestions("insert into .", len("insert into ")))
+    )
+
+    client.run_statement("drop database d1;")
+    client.run_statement("drop database d2;")
+
+
+def test_mariadb_autocompleter_database_before_table_name_under_partial_database_name(
+    mariadb_server: Type[MariaDBServer],
+):
+    mocklog = Mock()
+    cfg = ClientConfig(mocklog, name="nonexistentcfg.json")  # default config
+
+    mariadb_server(mocklog, cfg)
+
+    client = MariaDBClient(mocklog, cfg)
+    client.start()
+    client.run_statement("create database da1;")
+    client.run_statement("use da1;")
+    client.run_statement("create table t1(a int, b int);")
+    client.run_statement("create table t2(a int, b int);")
+    client.run_statement("create database db2;")
+    client.run_statement("use db2;")
+    client.run_statement("create table haha1(a int, b int);")
+    client.run_statement("create table haha2(a int, b int);")
+    autocompleter = Autocompleter(client, mocklog)
+    autocompleter.refresh()
+
+    unittest.TestCase().assertListEqual(
+        ["da1"],
+         get_text_list(autocompleter.get_suggestions("insert into da.", len("insert into da")))
+    )
+    client.run_statement("drop database da1;")
+    client.run_statement("drop database db2;")

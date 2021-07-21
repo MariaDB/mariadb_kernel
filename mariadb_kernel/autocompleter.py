@@ -38,6 +38,9 @@ class Refresher(object):
     def refresh_show_commands(self):
         self.completer.extend_show_items(self.executor.show_candidates())
 
+    def refresh_database_tables(self):
+        self.completer.extend_tables(self.executor.database_tables())
+
     def refresh(self):
         self.executor.update_db_name()
 
@@ -49,6 +52,7 @@ class Refresher(object):
         self.refresh_functions()
         self.refresh_special()
         self.refresh_show_commands()
+        self.refresh_database_tables()
 
         self.completer.set_keywords(self.fetch_keywords)
         self.completer.set_functions(self.fetch_functions)

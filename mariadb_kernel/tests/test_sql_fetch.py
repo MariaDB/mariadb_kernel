@@ -243,7 +243,6 @@ def test_mariadb_sql_fetch_keywords(mariadb_server: Type[MariaDBServer]):
     client.start()
     sql_fetch = SqlFetch(client, mocklog)
 
-    print(sql_fetch.keywords())
     expected_keywords = [
         "&&",
         "<=",
@@ -1191,3 +1190,28 @@ def test_mariadb_sql_fetch_sql_functions(mariadb_server: Type[MariaDBServer]):
     ]
     functions = sql_fetch.sql_functions()
     assert set(expected_functions).issubset(functions) or functions == []
+
+
+def test_mariadb_sql_fetch_database_tables(mariadb_server: Type[MariaDBServer]):
+    mocklog = Mock()
+    cfg = ClientConfig(mocklog)  # default config
+
+    mariadb_server(mocklog, cfg)
+
+    client = MariaDBClient(mocklog, cfg)
+    client.start()
+    sql_fetch = SqlFetch(client, mocklog)
+    client.run_statement("create database t1;")
+    client.run_statement("create database t2;")
+    client.run_statement("use t1;")
+    client.run_statement("create table table1(a int);")
+    client.run_statement("create table table2(a int);")
+    client.run_statement("use t2;")
+    client.run_statement("create table alpha(a int);")
+    client.run_statement("create table beta(a int);")
+
+    assert set(
+        [("t1", "table1"), ("t1", "table2"), ("t2", "alpha"), ("t2", "beta")]
+    ).issubset(sql_fetch.database_tables())
+    client.run_statement("drop database t1;")
+    client.run_statement("drop database t2;")

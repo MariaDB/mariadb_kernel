@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 
 from re import compile, escape
 from collections import Counter
@@ -1129,11 +1129,20 @@ class SQLAnalyze(Completer):
             metadata[self.dbname][func[0]] = None
             self.all_completions.add(func[0])
 
+    def extend_tables(self, table_data):
+        try:
+            table_data = [self.escaped_names(d) for d in table_data]
+        except Exception:
+            table_data = []
+        for database, table in table_data:
+            self.database_tables.append((database, table))
+
     def set_dbname(self, dbname):
         self.dbname = dbname
 
     def reset_completions(self):
         self.databases = []
+        self.database_tables: List[Tuple[str, str]] = []
         self.users = []
         self.show_items = []
         self.dbname = ""
@@ -1256,8 +1265,25 @@ class SQLAnalyze(Completer):
                 completions.extend(aliases)
 
             elif suggestion["type"] == "database":
-                dbs = self.find_matches(word_before_cursor, self.databases)
-                completions.extend(dbs)
+                if suggestion.get("table") != None:
+                    if suggestion.get("table") == "":
+                        dbs = self.find_matches(word_before_cursor, self.databases)
+                        completions.extend(dbs)
+                    else:
+                        database_list = list(
+                            map(
+                                lambda t: t[0],
+                                filter(
+                                    lambda t: t[1] == suggestion["table"],
+                                    self.database_tables,
+                                ),
+                            )
+                        )
+                        dbs = self.find_matches(word_before_cursor, database_list)
+                        completions.extend(dbs)
+                else:
+                    dbs = self.find_matches(word_before_cursor, self.databases)
+                    completions.extend(dbs)
 
             elif suggestion["type"] == "keyword":
                 keywords = self.find_matches(

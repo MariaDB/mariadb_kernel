@@ -142,6 +142,30 @@ class SqlFetch:
         )
         return int(str_list[0])
 
+    #     database_tables_query = """select TABLE_SCHEMA, TABLE_NAME from information_schema.TABLES"""
+    def database_tables(self):
+        """Yields (database name, table name) pairs"""
+        database_tables_query = (
+            """select TABLE_SCHEMA, TABLE_NAME from information_schema.TABLES"""
+        )
+        result_html = self.maridb_client.run_statement(database_tables_query)
+        if self.maridb_client.iserror():
+            raise Exception(f"Client returned an error : {result_html}")
+        try:
+            if result_html == "Query OK":
+                return []
+            df = pandas.read_html(result_html)
+            database_name_list = list(df[0]["TABLE_SCHEMA"].values)
+            table_name_list = list(df[0]["TABLE_NAME"].values)
+            database_table_list = [
+                (database_name_list[i], table_name_list[i])
+                for i, _ in enumerate(database_name_list)
+            ]
+        except Exception:
+            self.log.error(f"Pandas failed to parse html : {result_html}")
+            raise
+        return database_table_list
+
     def get_db_name(self):
         # functions_query
         current_use_database_query = "SELECT DATABASE();"

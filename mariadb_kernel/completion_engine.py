@@ -88,18 +88,22 @@ def suggest_type(full_text, text_before_cursor):
 
     # this is for database suggestion. Combined with a token after text cursor
     # ex: 「insert into .t1」 when cursor after 「insert into 」
-    if word_before_cursor == "":
-        parsed_result = sqlparse.parse(full_text[len(text_before_cursor) :])
-        if len(parsed_result) > 0:
-            parsed_back = parsed_result[0]
-            token_after_text_cursor = parsed_back.tokens[0]
-            if (
-                token_after_text_cursor.ttype == Punctuation
-                and token_after_text_cursor.value == "."
-                and str(last_token) in suggestion_table_tuple
-            ):
-                # need suggest database type
-                return [{"type": "database"}]
+    full_text_parsed_result = sqlparse.parse(full_text[len(text_before_cursor) :])
+    if len(full_text_parsed_result) > 0:
+            parsed_back = full_text_parsed_result[0]
+            if len(parsed_back.tokens) > 0:
+                parsed_back = full_text_parsed_result[0]
+                table = ""
+                if len(parsed_back.tokens) > 1:
+                    table = str(parsed_back.tokens[1])
+                token_after_text_cursor = parsed_back.tokens[0]
+                if (
+                    token_after_text_cursor.ttype == Punctuation
+                    and token_after_text_cursor.value == "."
+                    and str(last_token) in suggestion_table_tuple
+                ):
+                    # need suggest database type
+                    return [{"type": "database", "table": table}]
 
     return suggest_based_on_last_token(
         last_token, text_before_cursor, full_text, identifier
