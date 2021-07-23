@@ -3,6 +3,7 @@
 # Distributed under the terms of the Modified BSD License.
 
 from ipykernel.kernelbase import Kernel
+from prompt_toolkit.document import Document
 
 from ._version import version as __version__
 from mariadb_kernel.client_config import ClientConfig
@@ -14,6 +15,7 @@ from mariadb_kernel.code_parser import CodeParser
 from mariadb_kernel.mariadb_server import MariaDBServer
 from mariadb_kernel.maria_magics.maria_magic import MariaMagic
 from mariadb_kernel.autocompleter import Autocompleter
+from mariadb_kernel.introspection_provider import IntrospectionProvider
 
 import logging
 import pexpect
@@ -209,4 +211,19 @@ class MariaDBKernel(Kernel):
             "matches": match_text_list,
             "cursor_start": cursor_pos + offset,
             "cursor_end": cursor_pos,
+        }
+
+    def do_inspect(self, code, cursor_pos, detail_level):
+        introspection_provider = IntrospectionProvider()
+        result_html = (
+            introspection_provider.get_introspection_explain_html(
+                Document(code, int(cursor_pos)), self.autocompleter.completer
+            )
+            or ""
+        )
+        return {
+            "status": "ok",
+            "data": {"text/html": result_html},
+            "metadata": {},
+            "found": True,
         }

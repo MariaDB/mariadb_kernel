@@ -50,6 +50,7 @@ class Refresher(object):
         self.executor.update_db_name()
 
         self.completer = SQLAnalyze(self.log, True)
+        self.completer.set_dbname(self.executor.dbname)
         self.refresh_databases()
         self.refresh_schemata()
         self.refresh_tables()
@@ -77,9 +78,6 @@ class Autocompleter(object):
 
     def get_suggestions(self, code: str, cursor_pos: int):
         # self.refresh()
-        self.log.info(
-            f"self.completer.global_variable : {self.completer.global_variable}"
-        )
         result = self.completer.get_completions(
             document=Document(text=code, cursor_position=cursor_pos),
             complete_event=None,
