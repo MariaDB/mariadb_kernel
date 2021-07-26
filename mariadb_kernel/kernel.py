@@ -138,7 +138,7 @@ class MariaDBKernel(Kernel):
 
         self._execute_magics(parser.get_magics())
         if self.autocompleter:
-            self.autocompleter.refresh()
+            self.autocompleter.refresh(False)
         return rv
 
     def num_connected_clients(self):

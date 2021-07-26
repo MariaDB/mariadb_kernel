@@ -71,21 +71,15 @@ class Refresher(object):
         self.completer.set_functions(self.fetch_functions)
         self.refresh_complete = True
         self.old_completer.reset_completions(self.completer)
-        print("complete refresh_all")
+        self.log.info("complete refresh_all")
 
-    def refresh(self, sync=True):
+    def refresh(self, sync=False):
         if sync:
             self.executor.update_db_name()
             self.refresh_all()
         else:
-            for t in threading.enumerate():
-                print(f"{t.getName()} t.is_alive : {t.is_alive()}")
-            print("==========================")
             if self.refresh_complete is True:
                 self.executor.update_db_name()
-                # if self.refresh_thread:
-                #     self.refresh_thread.join()
-                print("refresh by thread")
                 self.refresh_thread = Thread(target=self.refresh_all)
                 self.refresh_thread.start()
 
@@ -95,18 +89,14 @@ class Autocompleter(object):
         self.executor = SqlFetch(mariadb_client, log)
         self.completer = SQLAnalyze(log, True)
         self.refresher = Refresher(self.completer, self.executor, log)
+        self.refresh()
         self.log = log
 
-    def refresh(self, sync=True):
-        self.completer = self.refresher.refresh(sync)
+    def refresh(self, sync:bool=True):
+        self.refresher.refresh(sync)
 
     def get_suggestions(self, code: str, cursor_pos: int):
         # self.refresh()
-        if self.completer is None:
-            return []
-        self.log.info(
-            f"self.completer.global_variable : {self.completer.global_variable}"
-        )
         result = self.completer.get_completions(
             document=Document(text=code, cursor_position=cursor_pos),
             complete_event=None,
