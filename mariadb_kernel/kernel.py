@@ -23,6 +23,8 @@ from bs4 import BeautifulSoup
 import os
 import signal
 
+_EXPERIMENTAL_KEY_NAME = "_jupyter_types_experimental"
+
 
 class MariaDBKernel(Kernel):
     implementation = "MariaDB"
@@ -204,9 +206,21 @@ class MariaDBKernel(Kernel):
             offset = completion_list[
                 0
             ].start_position  # if match part is 'sel', then start_position would be -3
+        type_dict_list = []
+        for completion in completion_list:
+            if completion.display_meta is not None:
+                type_dict_list.append(
+                    dict(
+                        start=completion.start_position,
+                        end=len(completion.text) + completion.start_position,
+                        text=completion.text,
+                        type=completion.display_meta_text,  # display_meta is FormattedText object
+                    )
+                )
         return {
             "status": "ok",
             "matches": match_text_list,
             "cursor_start": cursor_pos + offset,
             "cursor_end": cursor_pos,
+            "metadata": {_EXPERIMENTAL_KEY_NAME: type_dict_list},
         }

@@ -368,7 +368,7 @@ def test_mariadb_autocompleter_variables_suggestion_with_some_text(
             "long_query_time",
             "slow_query_log",
             "slow_query_log_file",
-            "expensive_subquery_limit"
+            "expensive_subquery_limit",
         ],
         get_text_list(
             autocompleter.get_suggestions("select @@query_", len("select @@query_"))

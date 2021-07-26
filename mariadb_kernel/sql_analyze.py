@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import Generator, List, Tuple
 
 from re import compile, escape
 from collections import Counter
@@ -1205,6 +1205,20 @@ class SQLAnalyze(Completer):
             for x, y, z in sorted(completions)
         )
 
+    def extend_with_type(
+        self, list: List, completions: Generator[Completion, None, None], type: str
+    ):
+        new_comletion_list = []
+        for completion in completions:
+            new_comletion_list.append(
+                Completion(
+                    text=completion.text,
+                    start_position=completion.start_position,
+                    display_meta=type,
+                )
+            )
+        list.extend(new_comletion_list)
+
     def get_completions(self, document, complete_event, smart_completion=None):
         word_before_cursor = document.get_word_before_cursor(WORD=True)
         if smart_completion is None:
@@ -1236,13 +1250,13 @@ class SQLAnalyze(Completer):
                     ]
 
                 cols = self.find_matches(word_before_cursor, scoped_cols)
-                completions.extend(cols)
+                self.extend_with_type(completions, cols, suggestion["type"])
 
             elif suggestion["type"] == "function":
                 # suggest user-defined functions using substring matching
                 funcs = self.populate_schema_objects(suggestion["schema"], "functions")
                 user_funcs = self.find_matches(word_before_cursor, funcs)
-                completions.extend(user_funcs)
+                self.extend_with_type(completions, user_funcs, suggestion["type"])
 
                 # suggest hardcoded functions using startswith matching only if
                 # there is no schema qualifier. If a schema qualifier is
@@ -1256,28 +1270,30 @@ class SQLAnalyze(Completer):
                         fuzzy=False,
                         casing=self.keyword_casing,
                     )
-                    completions.extend(predefined_funcs)
+                    self.extend_with_type(
+                        completions, predefined_funcs, suggestion["type"]
+                    )
 
             elif suggestion["type"] == "table":
                 tables = self.populate_schema_objects(suggestion["schema"], "tables")
                 tables = self.find_matches(word_before_cursor, tables)
-                completions.extend(tables)
+                self.extend_with_type(completions, tables, suggestion["type"])
 
             elif suggestion["type"] == "view":
                 views = self.populate_schema_objects(suggestion["schema"], "views")
                 views = self.find_matches(word_before_cursor, views)
-                completions.extend(views)
+                self.extend_with_type(completions, views, suggestion["type"])
 
             elif suggestion["type"] == "alias":
                 aliases = suggestion["aliases"]
                 aliases = self.find_matches(word_before_cursor, aliases)
-                completions.extend(aliases)
+                self.extend_with_type(completions, aliases, suggestion["type"])
 
             elif suggestion["type"] == "database":
                 if suggestion.get("table") != None:
                     if suggestion.get("table") == "":
                         dbs = self.find_matches(word_before_cursor, self.databases)
-                        completions.extend(dbs)
+                        self.extend_with_type(completions, dbs, suggestion["type"])
                     else:
                         database_list = list(
                             map(
@@ -1289,10 +1305,10 @@ class SQLAnalyze(Completer):
                             )
                         )
                         dbs = self.find_matches(word_before_cursor, database_list)
-                        completions.extend(dbs)
+                        self.extend_with_type(completions, dbs, suggestion["type"])
                 else:
                     dbs = self.find_matches(word_before_cursor, self.databases)
-                    completions.extend(dbs)
+                    self.extend_with_type(completions, dbs, suggestion["type"])
 
             elif suggestion["type"] == "keyword":
                 keywords = self.find_matches(
@@ -1302,7 +1318,7 @@ class SQLAnalyze(Completer):
                     fuzzy=False,
                     casing=self.keyword_casing,
                 )
-                completions.extend(keywords)
+                self.extend_with_type(completions, keywords, suggestion["type"])
 
             elif suggestion["type"] == "show":
                 show_items = self.find_matches(
@@ -1312,18 +1328,18 @@ class SQLAnalyze(Completer):
                     fuzzy=True,
                     casing=self.keyword_casing,
                 )
-                completions.extend(show_items)
+                self.extend_with_type(completions, show_items, suggestion["type"])
 
             elif suggestion["type"] == "change":
                 change_items = self.find_matches(
                     word_before_cursor, self.change_items, start_only=False, fuzzy=True
                 )
-                completions.extend(change_items)
+                self.extend_with_type(completions, change_items, suggestion["type"])
             elif suggestion["type"] == "user":
                 users = self.find_matches(
                     word_before_cursor, self.users, start_only=False, fuzzy=True
                 )
-                completions.extend(users)
+                self.extend_with_type(completions, users, suggestion["type"])
 
             elif suggestion["type"] == "special":
                 special = self.find_matches(
@@ -1332,7 +1348,7 @@ class SQLAnalyze(Completer):
                     start_only=True,
                     fuzzy=False,
                 )
-                completions.extend(special)
+                self.extend_with_type(completions, special, suggestion["type"])
             elif suggestion["type"] == "favoritequery":
                 queries = self.find_matches(
                     word_before_cursor,
@@ -1340,15 +1356,15 @@ class SQLAnalyze(Completer):
                     start_only=False,
                     fuzzy=True,
                 )
-                completions.extend(queries)
+                self.extend_with_type(completions, queries, suggestion["type"])
             elif suggestion["type"] == "table_format":
                 formats = self.find_matches(
                     word_before_cursor, self.table_formats, start_only=True, fuzzy=False
                 )
-                completions.extend(formats)
+                self.extend_with_type(completions, formats, suggestion["type"])
             elif suggestion["type"] == "file_name":
                 file_names = self.find_files(word_before_cursor)
-                completions.extend(file_names)
+                self.extend_with_type(completions, file_names, suggestion["type"])
             elif suggestion["type"] == "session":
                 # [{'scope': 'both', 'type': 'session'}]
                 # scope can be both, global, session
@@ -1373,7 +1389,7 @@ class SQLAnalyze(Completer):
                 )
                 self.log.info(f"word: {word}")
                 variables = self.find_matches(word, list(variable_list))
-                completions.extend(variables)
+                self.extend_with_type(completions, variables, suggestion["type"])
 
         return completions
 
