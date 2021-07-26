@@ -1147,16 +1147,27 @@ class SQLAnalyze(Completer):
     def set_dbname(self, dbname):
         self.dbname = dbname
 
-    def reset_completions(self):
-        self.databases = []
-        self.database_tables: List[Tuple[str, str]] = []
-        self.global_variable: List[str] = []
-        self.session_variable: List[str] = []
-        self.users = []
-        self.show_items = []
-        self.dbname = ""
-        self.dbmetadata = {"tables": {}, "views": {}, "functions": {}}
-        self.all_completions = set(self.keywords + self.functions)
+    def reset_completions(self, completer=None):
+        if completer:
+            self.databases = completer.databases
+            self.database_tables: List[Tuple[str, str]] = completer.database_tables
+            self.global_variable: List[str] = completer.global_variable
+            self.session_variable: List[str] = completer.session_variable
+            self.users = completer.users
+            self.show_items = completer.show_items
+            self.dbname = completer.dbname
+            self.dbmetadata = completer.dbmetadata
+            self.all_completions =  completer.all_completions
+        else:
+            self.databases = []
+            self.database_tables: List[Tuple[str, str]] = []
+            self.global_variable: List[str] = []
+            self.session_variable: List[str] = []
+            self.users = []
+            self.show_items = []
+            self.dbname = ""
+            self.dbmetadata = {"tables": {}, "views": {}, "functions": {}}
+            self.all_completions = set(self.keywords + self.functions)
 
     @staticmethod
     def find_matches(text, collection, start_only=False, fuzzy=True, casing=None):
