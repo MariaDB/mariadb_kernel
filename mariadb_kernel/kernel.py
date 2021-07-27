@@ -217,7 +217,7 @@ class MariaDBKernel(Kernel):
         introspection_provider = IntrospectionProvider()
         result_html = (
             introspection_provider.get_introspection_explain_html(
-                Document(code, int(cursor_pos)), self.autocompleter.completer
+                Document(code, int(cursor_pos)), self.autocompleter
             )
             or ""
         )

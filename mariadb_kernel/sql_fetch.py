@@ -190,6 +190,46 @@ class SqlFetch:
                 return ""
         return result
 
+    def get_tables_in_db_html(self, db: str):
+        tables_from_db_query = f"show tables from {db}"
+        result_html = self.maridb_client.run_statement(tables_from_db_query)
+        if self.maridb_client.iserror():
+            raise Exception(f"Client returned an error : {result_html}")
+        return result_html
+
+    def get_table_schema_html(self, table: str, db: str):
+        table_schema_query = f"describe {db}.{table}"
+        result_html = self.maridb_client.run_statement(table_schema_query)
+        if self.maridb_client.iserror():
+            raise Exception(f"Client returned an error : {result_html}")
+        return result_html
+
+    def get_partial_table_row_html(self, table: str, db: str, limit: int = 5):
+        table_rows_query = f"select * from {db}.{table} limit {limit}"
+        result_html = self.maridb_client.run_statement(table_rows_query)
+        if self.maridb_client.iserror():
+            raise Exception(f"Client returned an error : {result_html}")
+        return result_html
+
+    def get_column_type_html(self, column: str, table: str, db: str):
+        column_type_query = f"""SELECT COLUMN_TYPE
+                                FROM INFORMATION_SCHEMA.COLUMNS
+                                WHERE
+                                    TABLE_SCHEMA = '{db}' AND
+                                    TABLE_NAME = '{table}' AND
+                                    COLUMN_NAME = '{column}';"""
+        result_html = self.maridb_client.run_statement(column_type_query)
+        if self.maridb_client.iserror():
+            raise Exception(f"Client returned an error : {result_html}")
+        return result_html
+
+    def get_column_row_html(self, column: str, table: str, db: str, limit: int = 5):
+        column_rows_query = f"select {column} from {db}.{table} limit {limit}"
+        result_html = self.maridb_client.run_statement(column_rows_query)
+        if self.maridb_client.iserror():
+            raise Exception(f"Client returned an error : {result_html}")
+        return result_html
+
     def change_db_name(self, db):
         self.dbname = db
 

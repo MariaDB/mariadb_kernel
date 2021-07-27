@@ -1,4 +1,3 @@
-from os import curdir
 from typing import Dict, Union
 from mariadb_kernel.autocompleter import Autocompleter
 from mariadb_kernel.sql_analyze import SQLAnalyze
@@ -26,25 +25,16 @@ class IntrospectionProvider:
         last_partial_token_right = first_word(document.text_after_cursor)
         last_partial_token_left = last_word(document.text_before_cursor)
         word = last_partial_token_left + last_partial_token_right
-        print(f"word : {word}")
-        print(last_partial_token_right)
-        print(last_partial_token_left)
 
         # get word start's position and end's position
         start_position = document.cursor_position - len(last_partial_token_left)
         end_position = document.cursor_position + len(last_partial_token_right)
-        print(f"word start's position : {start_position}")
-        print(f"word end's position : {end_position}")
         suggestion = suggest_type(document.text, document.text[:start_position])
-        print(f"suggest : {suggestion}")
         suggest_dict = {}
         for suggest in suggestion:
             type = suggest.get("type")
             if type:
                 suggest_dict[type] = suggest
-        print(f"suggest_dict : {suggest_dict}")
-        print(f"completer.dbmetadata : {completer.dbmetadata}")
-        # print(f"completer.database_tables : {completer.database_tables}")
         # Need to check it is being suggested and it exists or not
         # priority: keyword -> function -> databse -> table -> column
         if suggest_dict.get("keyword") and word in [
@@ -97,8 +87,10 @@ class IntrospectionProvider:
                             "table": key,
                         }
 
-    def get_introspection_explain_html(self, document: Document, completer: SQLAnalyze):
-        result = self.get_instropection(document, completer)
+    def get_introspection_explain_html(
+        self, document: Document, autocompleter: Autocompleter
+    ):
+        result = self.get_instropection(document, autocompleter.completer)
         if result:
             word_type = result.get("type")
             if word_type == "keyword":
@@ -106,11 +98,37 @@ class IntrospectionProvider:
             elif word_type == "function":
                 return "<b>function</b>"
             elif word_type == "database":
-                return "<b>database</b>"
+                word = result.get("word")
+                if word:
+                    tables_html = autocompleter.executor.get_tables_in_db_html(word)
+                    return f"<b>database</b><br/>{tables_html}"
+                else:
+                    return "<b>database</b>"
             elif word_type == "table":
-                return "<b>table</b>"
+                word = result.get("word")
+                db_name = result.get("database")
+                if word and db_name:
+                    table_html = autocompleter.executor.get_table_schema_html(
+                        word, db_name
+                    )
+                    limit_num = 5
+                    table_rows_html = autocompleter.executor.get_partial_table_row_html(word, db_name, limit_num)
+                    return f"<b>table</b><br/>{table_html}<b>first {limit_num} row of the table {word}</b><br/>{table_rows_html}"
+                else:
+                    return "<b>table</b>"
             elif word_type == "column":
-                return "<b>column</b>"
+                word = result.get("word")
+                table_name = result.get("table")
+                db_name = result.get("database")
+                if word and db_name and table_name:
+                    column_html = autocompleter.executor.get_column_type_html(
+                        word, table_name, db_name
+                    )
+                    limit_num = 5
+                    column_rows_html = autocompleter.executor.get_column_row_html(word, table_name, db_name, limit_num)
+                    return f"<b>column</b><br/>{column_html}<br/><b>first {limit_num} row of the column {word}</b><br/>{column_rows_html}"
+                else:
+                    return "<b>column</b>"
 
 
 # example
