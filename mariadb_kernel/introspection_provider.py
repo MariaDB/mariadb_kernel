@@ -1,9 +1,12 @@
 from typing import Dict, Union
+
+from sqlparse.sql import Parenthesis
 from mariadb_kernel.autocompleter import Autocompleter
 from mariadb_kernel.sql_analyze import SQLAnalyze
 import re
 from prompt_toolkit.document import Document
 from mariadb_kernel.completion_engine import suggest_type, last_word
+import sqlparse
 from mock import Mock
 
 
@@ -35,32 +38,22 @@ class IntrospectionProvider:
             type = suggest.get("type")
             if type:
                 suggest_dict[type] = suggest
+        print(f"suggest_dict: {suggest_dict}")
         # Need to check it is being suggested and it exists or not
-        # priority: keyword -> function -> databse -> table -> column
-        if suggest_dict.get("keyword") and word in [
-            keyword.lower() for keyword in completer.keywords
-        ]:
-            return {"word": word, "type": "keyword"}
-        elif suggest_dict.get("function") and word in [
-            function.lower() for function in completer.functions
-        ]:
-            return {"word": word, "type": "function"}
-        elif suggest_dict.get("database") and word in completer.databases:
-            return {"word": word, "type": "database"}
-        elif suggest_dict.get("table"):
-            # If suggest_dict's table has schema field. Regard that as the database, which table belongs
-            if suggest_dict["table"].get("schema"):
-                table_dbName = suggest_dict["table"].get("schema")
-                for t in completer.database_tables:
-                    if t[0] == table_dbName and t[1] == word:
-                        return {"word": word, "type": "table", "database": table_dbName}
-            else:
-                table_dbName = completer.dbname
-                curDB = completer.dbmetadata["tables"].get(table_dbName)
-                if curDB:
-                    if curDB.get(word):
-                        return {"word": word, "type": "table", "database": table_dbName}
-        elif suggest_dict.get("column"):
+        # priority: column -> table -> database -> function -> keyword
+        if suggest_dict.get("column"):
+            # check this is function or not
+            parsed_after_cursor = sqlparse.parse(document.text[end_position:])
+            if len(parsed_after_cursor) > 0:
+                parsed_tokens = parsed_after_cursor[0].tokens
+                print(f"parsed_tokens : {parsed_tokens}")
+                if len(parsed_tokens) > 0:
+                    if suggest_dict.get("function") and isinstance(parsed_tokens[0], Parenthesis):
+                        if word in [
+                            function.lower() for function in completer.functions
+                        ]:
+                            return {"word": word, "type": "function"}
+
             # if suggest_dict's column has tables not empty, use that as table
             tables = suggest_dict["column"].get("tables")
             curDB: Union[Dict, None] = completer.dbmetadata["tables"].get(
@@ -68,7 +61,10 @@ class IntrospectionProvider:
             )
             if len(tables) > 0:
                 if tables[0][1] != None and curDB:
-                    if curDB.get(tables[0][1]) and word in curDB[tables[0][1]]:
+                    if curDB.get(tables[0][1]) and (
+                        word in curDB[tables[0][1]]
+                        or f"`{word}`" in curDB[tables[0][1]]
+                    ):
                         return {
                             "word": word,
                             "type": "column",
@@ -78,7 +74,7 @@ class IntrospectionProvider:
             # search all table for finding which table contains this column
             if curDB:
                 for key in curDB.keys():
-                    if word in curDB[key]:
+                    if word in curDB[key] or f"`{word}`" in curDB[key]:
                         # maybe this is wrong
                         return {
                             "word": word,
@@ -86,6 +82,29 @@ class IntrospectionProvider:
                             "database": completer.dbname,
                             "table": key,
                         }
+        if suggest_dict.get("table"):
+            # If suggest_dict's table has schema field. Regard that as the database, which table belongs
+            if suggest_dict["table"].get("schema"):
+                table_dbName = suggest_dict["table"].get("schema")
+                for t in completer.database_tables:
+                    if t[0] == table_dbName and (t[1] == word or t[1] == f"`{word}`"):
+                        return {"word": word, "type": "table", "database": table_dbName}
+            else:
+                table_dbName = completer.dbname
+                curDB = completer.dbmetadata["tables"].get(table_dbName)
+                if curDB:
+                    if curDB.get(word) or curDB.get(f"`{word}`"):
+                        return {"word": word, "type": "table", "database": table_dbName}
+        if suggest_dict.get("database") and word in completer.databases:
+            return {"word": word, "type": "database"}
+        if suggest_dict.get("function") and word in [
+            function.lower() for function in completer.functions
+        ]:
+            return {"word": word, "type": "function"}
+        if suggest_dict.get("keyword") and word in [
+            keyword.lower() for keyword in completer.keywords
+        ]:
+            return {"word": word, "type": "keyword"}
 
     def get_introspection_explain_html(
         self, document: Document, autocompleter: Autocompleter
@@ -112,7 +131,9 @@ class IntrospectionProvider:
                         word, db_name
                     )
                     limit_num = 5
-                    table_rows_html = autocompleter.executor.get_partial_table_row_html(word, db_name, limit_num)
+                    table_rows_html = autocompleter.executor.get_partial_table_row_html(
+                        word, db_name, limit_num
+                    )
                     return f"<b>table</b><br/>{table_html}<b>first {limit_num} row of the table {word}</b><br/>{table_rows_html}"
                 else:
                     return "<b>table</b>"
@@ -125,7 +146,9 @@ class IntrospectionProvider:
                         word, table_name, db_name
                     )
                     limit_num = 5
-                    column_rows_html = autocompleter.executor.get_column_row_html(word, table_name, db_name, limit_num)
+                    column_rows_html = autocompleter.executor.get_column_row_html(
+                        word, table_name, db_name, limit_num
+                    )
                     return f"<b>column</b><br/>{column_html}<br/><b>first {limit_num} row of the column {word}</b><br/>{column_rows_html}"
                 else:
                     return "<b>column</b>"
