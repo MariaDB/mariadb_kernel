@@ -1,4 +1,5 @@
-from typing import Dict, Union
+from typing import Dict, List, Union
+from bs4.element import Tag
 
 from sqlparse.sql import Parenthesis
 from mariadb_kernel.autocompleter import Autocompleter
@@ -7,7 +8,9 @@ import re
 from prompt_toolkit.document import Document
 from mariadb_kernel.completion_engine import suggest_type, last_word
 import sqlparse
-from mock import Mock
+from bs4 import BeautifulSoup
+import json
+from pathlib import Path
 
 
 def first_word(text):
@@ -23,6 +26,13 @@ def first_word(text):
 
 
 class IntrospectionProvider:
+    def __init__(self) -> None:
+        self.func_doc: dict = {}
+        parent_abs_path =  str(Path(__file__).parent.resolve()) # ending no /
+        with open(parent_abs_path + "/data/func_doc.json","r") as f:
+            self.func_doc = json.load(f)
+
+
     def get_instropection(self, document: Document, completer: SQLAnalyze):
         # return word's type and word's text
         last_partial_token_right = first_word(document.text_after_cursor)
@@ -106,6 +116,18 @@ class IntrospectionProvider:
         ]:
             return {"word": word, "type": "keyword"}
 
+    def get_left_alignment_table(self, html:str):
+        soup = BeautifulSoup(html, "html.parser")
+        table = soup.find("table")
+        if table and type(table) is Tag:
+            table['style'] = "margin-left: 0"
+            return str(table)
+        else:
+            return html
+    
+    def render_doc_header(self, name: str):
+        return f"<h2 style='color: #0045ad'>{name}</h2>"
+
     def get_introspection_explain_html(
         self, document: Document, autocompleter: Autocompleter
     ):
@@ -113,16 +135,20 @@ class IntrospectionProvider:
         if result:
             word_type = result.get("type")
             if word_type == "keyword":
-                return "<b>keyword</b>"
+                return self.render_doc_header("keyword")
             elif word_type == "function":
-                return "<b>function</b>"
+                word = result.get("word") or ""
+                doc: Union[List[str], None] = self.func_doc.get(word.lower()) or self.func_doc.get(word.upper())
+                if doc:
+                    return f"{self.render_doc_header('function')}{''.join(doc)}"
+                return f"{self.render_doc_header('function')}"
             elif word_type == "database":
                 word = result.get("word")
                 if word:
                     tables_html = autocompleter.executor.get_tables_in_db_html(word)
-                    return f"<b>database</b><br/>{tables_html}"
+                    return f"{self.render_doc_header('database')}<br/>{self.get_left_alignment_table(tables_html)}"
                 else:
-                    return "<b>database</b>"
+                    return f"{self.render_doc_header('database')}"
             elif word_type == "table":
                 word = result.get("word")
                 db_name = result.get("database")
@@ -134,9 +160,12 @@ class IntrospectionProvider:
                     table_rows_html = autocompleter.executor.get_partial_table_row_html(
                         word, db_name, limit_num
                     )
-                    return f"<b>table</b><br/>{table_html}<b>first {limit_num} row of the table {word}</b><br/>{table_rows_html}"
+                    return f"""{self.render_doc_header('table')}<br/>
+                               {self.get_left_alignment_table(table_html)}
+                               <b>first {limit_num} row of the table {word}</b><br/>
+                               {self.get_left_alignment_table(table_rows_html)}"""
                 else:
-                    return "<b>table</b>"
+                    return f"{self.render_doc_header('table')}"
             elif word_type == "column":
                 word = result.get("word")
                 table_name = result.get("table")
@@ -149,9 +178,12 @@ class IntrospectionProvider:
                     column_rows_html = autocompleter.executor.get_column_row_html(
                         word, table_name, db_name, limit_num
                     )
-                    return f"<b>column</b><br/>{column_html}<br/><b>first {limit_num} row of the column {word}</b><br/>{column_rows_html}"
+                    return f"""{self.render_doc_header('column')}<br/>
+                               {self.get_left_alignment_table(column_html)}<br/>
+                               <b>first {limit_num} row of the column {word}</b><br/>
+                               {self.get_left_alignment_table(column_rows_html)}"""
                 else:
-                    return "<b>column</b>"
+                    return f"{self.render_doc_header('column')}"
 
 
 # example
