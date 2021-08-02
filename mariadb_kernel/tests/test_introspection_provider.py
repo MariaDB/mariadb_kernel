@@ -272,7 +272,8 @@ def test_introspection_provider_introspect_function_with_function_name_is_same_w
     autocompleter.refresh()
 
     result = provider.get_instropection(
-        Document("select min(min) from tbl1;", len("select mi")), autocompleter.completer
+        Document("select min(min) from tbl1;", len("select mi")),
+        autocompleter.completer,
     )
 
     assert {
@@ -331,7 +332,8 @@ def test_introspection_provider_introspect_column_with_table_name_is_same_with_k
     autocompleter.refresh()
 
     result = provider.get_instropection(
-        Document("select * from type;", len("select * from ty")), autocompleter.completer
+        Document("select * from type;", len("select * from ty")),
+        autocompleter.completer,
     )
 
     assert {
@@ -362,7 +364,8 @@ def test_introspection_provider_introspect_column_with_column_name_is_same_with_
     autocompleter.refresh()
 
     result = provider.get_instropection(
-        Document("select tabl2.col_tabl from tabl2;", len("select tabl2.col_")), autocompleter.completer
+        Document("select tabl2.col_tabl from tabl2;", len("select tabl2.col_")),
+        autocompleter.completer,
     )
 
     assert {

@@ -28,10 +28,9 @@ def first_word(text):
 class IntrospectionProvider:
     def __init__(self) -> None:
         self.func_doc: dict = {}
-        parent_abs_path =  str(Path(__file__).parent.resolve()) # ending no /
-        with open(parent_abs_path + "/data/func_doc.json","r") as f:
+        parent_abs_path = str(Path(__file__).parent.resolve())  # ending no /
+        with open(parent_abs_path + "/data/func_doc.json", "r") as f:
             self.func_doc = json.load(f)
-
 
     def get_instropection(self, document: Document, completer: SQLAnalyze):
         # return word's type and word's text
@@ -58,7 +57,9 @@ class IntrospectionProvider:
                 parsed_tokens = parsed_after_cursor[0].tokens
                 print(f"parsed_tokens : {parsed_tokens}")
                 if len(parsed_tokens) > 0:
-                    if suggest_dict.get("function") and isinstance(parsed_tokens[0], Parenthesis):
+                    if suggest_dict.get("function") and isinstance(
+                        parsed_tokens[0], Parenthesis
+                    ):
                         if word in [
                             function.lower() for function in completer.functions
                         ]:
@@ -116,15 +117,15 @@ class IntrospectionProvider:
         ]:
             return {"word": word, "type": "keyword"}
 
-    def get_left_alignment_table(self, html:str):
+    def get_left_alignment_table(self, html: str):
         soup = BeautifulSoup(html, "html.parser")
         table = soup.find("table")
         if table and type(table) is Tag:
-            table['style'] = "margin-left: 0"
+            table["style"] = "margin-left: 0"
             return str(table)
         else:
             return html
-    
+
     def render_doc_header(self, name: str):
         return f"<h2 style='color: #0045ad'>{name}</h2>"
 
@@ -148,7 +149,9 @@ class IntrospectionProvider:
                 return self.render_doc_header("keyword")
             elif word_type == "function":
                 if word:
-                    doc: Union[List[str], None] = self.func_doc.get(word.lower()) or self.func_doc.get(word.upper())
+                    doc: Union[List[str], None] = self.func_doc.get(
+                        word.lower()
+                    ) or self.func_doc.get(word.upper())
                     if doc:
                         return f"{self.render_doc_header('function')}{''.join(doc)}"
                 return f"{self.render_doc_header('function')}"
