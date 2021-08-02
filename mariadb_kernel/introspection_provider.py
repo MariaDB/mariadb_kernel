@@ -134,23 +134,31 @@ class IntrospectionProvider:
         result = self.get_instropection(document, autocompleter.completer)
         if result:
             word_type = result.get("type")
+            word = result.get("word")
             if word_type == "keyword":
+                # some special keyword would provide more information
+                # such as `user` keyword would list all user in database.
+                if word:
+                    if word == "user":
+                        # would show all user list
+                        users = autocompleter.executor.users()
+                        user_list_text = [user[0] for user in users]
+                        users_text = "<br/>".join(user_list_text)
+                        return f"{self.render_doc_header('keyword')}<h2>all user list : </h2>{users_text}"
                 return self.render_doc_header("keyword")
             elif word_type == "function":
-                word = result.get("word") or ""
-                doc: Union[List[str], None] = self.func_doc.get(word.lower()) or self.func_doc.get(word.upper())
-                if doc:
-                    return f"{self.render_doc_header('function')}{''.join(doc)}"
+                if word:
+                    doc: Union[List[str], None] = self.func_doc.get(word.lower()) or self.func_doc.get(word.upper())
+                    if doc:
+                        return f"{self.render_doc_header('function')}{''.join(doc)}"
                 return f"{self.render_doc_header('function')}"
             elif word_type == "database":
-                word = result.get("word")
                 if word:
                     tables_html = autocompleter.executor.get_tables_in_db_html(word)
-                    return f"{self.render_doc_header('database')}<br/>{self.get_left_alignment_table(tables_html)}"
+                    return f"{self.render_doc_header('database')}{self.get_left_alignment_table(tables_html)}"
                 else:
                     return f"{self.render_doc_header('database')}"
             elif word_type == "table":
-                word = result.get("word")
                 db_name = result.get("database")
                 if word and db_name:
                     table_html = autocompleter.executor.get_table_schema_html(
@@ -160,14 +168,13 @@ class IntrospectionProvider:
                     table_rows_html = autocompleter.executor.get_partial_table_row_html(
                         word, db_name, limit_num
                     )
-                    return f"""{self.render_doc_header('table')}<br/>
+                    return f"""{self.render_doc_header('table')}
                                {self.get_left_alignment_table(table_html)}
                                <b>first {limit_num} row of the table {word}</b><br/>
                                {self.get_left_alignment_table(table_rows_html)}"""
                 else:
                     return f"{self.render_doc_header('table')}"
             elif word_type == "column":
-                word = result.get("word")
                 table_name = result.get("table")
                 db_name = result.get("database")
                 if word and db_name and table_name:
@@ -178,7 +185,7 @@ class IntrospectionProvider:
                     column_rows_html = autocompleter.executor.get_column_row_html(
                         word, table_name, db_name, limit_num
                     )
-                    return f"""{self.render_doc_header('column')}<br/>
+                    return f"""{self.render_doc_header('column')}
                                {self.get_left_alignment_table(column_html)}<br/>
                                <b>first {limit_num} row of the column {word}</b><br/>
                                {self.get_left_alignment_table(column_rows_html)}"""
