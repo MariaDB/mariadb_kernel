@@ -1,7 +1,7 @@
 from typing import Dict, List, Tuple, Union
 from bs4.element import Tag
 
-from sqlparse.sql import Function, Identifier, IdentifierList, Parenthesis
+from sqlparse.sql import Function, Identifier, IdentifierList, Parenthesis, Values
 from sqlparse.tokens import Keyword, Punctuation, _TokenType
 from mariadb_kernel.autocompleter import Autocompleter
 from mariadb_kernel.sql_analyze import SQLAnalyze
@@ -102,21 +102,22 @@ class IntrospectionProvider:
                 hint = ""  # based on the text before 「VALUES」 and after 「insert into」 to get hint
                 value_index = 0
                 table_name = ""
-                print(tokens)
                 for token in tokens[::-1]:
                     if token.ttype == Punctuation and str(token) == "(":
                         last_match_token_text = str(token).lower()
                     elif (
-                        last_match_token_text == "("
+                        (last_match_token_text == "("
                         and token.ttype == Keyword
-                        and str(token).lower() == "values"
+                        and str(token).lower() == "values")
+                        or isinstance(token, Values)
                     ):
                         last_match_token_text = str(token).lower()
                     elif (
-                        last_match_token_text == "values"
+                        last_match_token_text.startswith("values")
                         and token.ttype == Keyword
                         and str(token).lower() == "into"
                     ):
+                    
                         last_match_token_text = str(token).lower()
                         next_token = parsed_before_cursor[0].token_next(
                             parsed_before_cursor[0].token_index(token)

@@ -546,3 +546,35 @@ def test_introspection_provider_introspect_insert_into_after_VALUES_would_sugges
         "value_index": 2,
     } == result
     client.run_statement("drop database db1;")
+
+
+def test_introspection_provider_introspect_insert_into_after_VALUES_would_suggest_column_hint_for_multi_value_list(
+    mariadb_server: Type[MariaDBServer],
+):
+    mocklog = Mock()
+    cfg = ClientConfig(mocklog, name="nonexistentcfg.json")  # default config
+
+    mariadb_server(mocklog, cfg)
+
+    client = MariaDBClient(mocklog, cfg)
+    client.start()
+    client.run_statement("create database db1;")
+    client.run_statement("use db1;")
+    client.run_statement("create table t1 (c int, b int, a int);")
+
+    provider = IntrospectionProvider()
+    autocompleter = Autocompleter(client, mocklog)
+    autocompleter.refresh()
+
+    result = provider.get_instropection(
+        Document("insert into t1 VALUES (1,2), (3,4), (5,", len("insert into t1 VALUES (1,2), (3,4), (5,")),
+        autocompleter.completer,
+    )
+
+    assert {
+        "type": "column_hint",
+        "hint": "",
+        "table_name": "t1",
+        "value_index": 1,
+    } == result
+    client.run_statement("drop database db1;")
