@@ -92,7 +92,7 @@ class Autocompleter(object):
         self.refresh()
         self.log = log
 
-    def refresh(self, sync:bool=True):
+    def refresh(self, sync: bool = True):
         self.refresher.refresh(sync)
 
     def get_suggestions(self, code: str, cursor_pos: int):

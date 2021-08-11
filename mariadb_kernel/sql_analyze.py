@@ -1157,7 +1157,7 @@ class SQLAnalyze(Completer):
             self.show_items = completer.show_items
             self.dbname = completer.dbname
             self.dbmetadata = completer.dbmetadata
-            self.all_completions =  completer.all_completions
+            self.all_completions = completer.all_completions
         else:
             self.databases = []
             self.database_tables: List[Tuple[str, str]] = []
