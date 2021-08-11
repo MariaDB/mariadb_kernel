@@ -26,5 +26,5 @@ setup(
         "write_to": "mariadb_kernel/_version.py",
     },
     setup_requires=["setuptools_scm"],
-    include_pakage_data=True
+    include_package_data=True
 )
