@@ -1,7 +1,8 @@
-from typing import Dict, List, Union
+from typing import Dict, List, Tuple, Union
 from bs4.element import Tag
 
-from sqlparse.sql import Parenthesis
+from sqlparse.sql import Function, Identifier, IdentifierList, Parenthesis
+from sqlparse.tokens import Keyword, Punctuation, _TokenType
 from mariadb_kernel.autocompleter import Autocompleter
 from mariadb_kernel.sql_analyze import SQLAnalyze
 import re
@@ -93,6 +94,97 @@ class IntrospectionProvider:
                             "database": completer.dbname,
                             "table": key,
                         }
+            # for statement like 「insert into t1 (a int, b int, c int) VALUES (」 would provide column hint
+            parsed_before_cursor = sqlparse.parse(document.text[:end_position])
+            if len(parsed_before_cursor) > 0:
+                tokens: List[_TokenType] = parsed_before_cursor[0].tokens
+                last_match_token_text: str = ""
+                hint = ""  # based on the text before 「VALUES」 and after 「insert into」 to get hint
+                value_index = 0
+                table_name = ""
+                print(tokens)
+                for token in tokens[::-1]:
+                    if token.ttype == Punctuation and str(token) == "(":
+                        last_match_token_text = str(token).lower()
+                    elif (
+                        last_match_token_text == "("
+                        and token.ttype == Keyword
+                        and str(token).lower() == "values"
+                    ):
+                        last_match_token_text = str(token).lower()
+                    elif (
+                        last_match_token_text == "values"
+                        and token.ttype == Keyword
+                        and str(token).lower() == "into"
+                    ):
+                        last_match_token_text = str(token).lower()
+                        next_token = parsed_before_cursor[0].token_next(
+                            parsed_before_cursor[0].token_index(token)
+                        )
+                        if next_token != (None, None) and next_token and next_token[1]:
+                            table_name = next_token[1].get_name()
+                    elif (
+                        last_match_token_text == "into"
+                        and str(token).lower() == "insert"
+                    ):
+                        return {
+                            "type": "column_hint",
+                            "hint": hint,
+                            "value_index": value_index,
+                            "table_name": table_name,
+                        }
+                    elif last_match_token_text == "values":
+                        # accumulate text between 「insert into」 and 「values (」
+                        # !!! sqlparse sometimes would resolve Column to Function
+                        if isinstance(token, Function):
+                            for t in token.tokens:
+                                if isinstance(t, Parenthesis):
+                                    for in_parenthesis_token in t.tokens:
+                                        # (a) => [<Punctuation '(' at 0x7F5AB584EFA0>, <Identifier 'a' at 0x7F5AB5841DD0>, <Punctuation ')' at 0x7F5AB58510A0>]
+                                        # (a, b, c) => [<Punctuation '(' at 0x7FE26C6120A0>, <IdentifierList 'a, b, c' at 0x7FE26C603D60>, <Punctuation ')' at 0x7FE26C6123A0>]
+                                        if isinstance(
+                                            in_parenthesis_token, IdentifierList
+                                        ):
+                                            cols: List[str] = []
+                                            cur_col_text = ""
+                                            for curToken in in_parenthesis_token.tokens:
+                                                if (
+                                                    curToken.ttype == Punctuation
+                                                    and str(curToken) in "()"
+                                                ):
+                                                    continue
+                                                if (
+                                                    curToken.ttype == Punctuation
+                                                    and str(curToken) == ","
+                                                ):
+                                                    cols.append(cur_col_text.lstrip())
+                                                    cur_col_text = ""
+                                                else:
+                                                    cur_col_text += str(curToken)
+                                            cols.append(cur_col_text)
+                                            if value_index >= len(cols):
+                                                return {
+                                                    "type": "column_hint",
+                                                    "hint": "out of column",
+                                                }
+                                            hint = cols[value_index].lstrip()
+                                        elif isinstance(
+                                            in_parenthesis_token, Identifier
+                                        ):
+                                            if value_index >= 1:
+                                                return {
+                                                    "type": "column_hint",
+                                                    "hint": "out of column",
+                                                }
+                    # VALUES (1 ,       => <Keyword 'VALUES' at 0x7F01FBB76FA0>, <Whitespace ' ' at 0x7F01FBB9F040>, <Punctuation '(' at 0x7F01FBB9F0A0>, <Integer '1' at 0x7F01FBB9F100>, <Whitespace ' ' at 0x7F01FBB9F160>, <Punctuation ',' at 0x7F01FBB9F1C0>]
+                    # VALUES (1, 2      => <Keyword 'VALUES' at 0x7F01FBB92F40>, <Whitespace ' ' at 0x7F01FBB8DCA0>, <Punctuation '(' at 0x7F01FBB8DD60>, <IdentifierList '1 , 2' at 0x7F01DDDF4660>]
+                    # VALUES (1, 2, 3   => <Keyword 'VALUES' at 0x7F01FBB92F40>, <Whitespace ' ' at 0x7F01FBB8DCA0>, <Punctuation '(' at 0x7F01FBB8DD60>, <IdentifierList '1 , 2' at 0x7F01DDDF4660>], <Punctuation ',' at 0x7F3CB98F92E0>]
+                    if last_match_token_text == "" and str(token) == ",":
+                        value_index += 1
+                    if isinstance(token, IdentifierList):
+                        for t in token.tokens:
+                            if t.ttype == Punctuation and str(t) == ",":
+                                value_index += 1
         if suggest_dict.get("table"):
             # If suggest_dict's table has schema field. Regard that as the database, which table belongs
             if suggest_dict["table"].get("schema"):
@@ -194,6 +286,34 @@ class IntrospectionProvider:
                                {self.get_left_alignment_table(column_rows_html)}"""
                 else:
                     return f"{self.render_doc_header('column')}"
+            elif word_type == "column_hint":
+                hint = result.get("hint")
+                value_index = result.get("value_index")
+                table_name = result.get("table_name")
+                if (
+                    hint != "out of column"
+                    and value_index != None
+                    and table_name != None
+                ):
+                    if hint == "":
+                        # ex: insert into t1 VALUES (1,2,
+                        result = autocompleter.executor.get_column_type_list(
+                            table_name, autocompleter.completer.dbname
+                        )
+                        if int(value_index) >= len(result):
+                            hint = "out of column"
+                        else:
+                            for i, item in enumerate(result):
+                                if i == value_index:
+                                    hint = item.name + " " + item.type
+                    else:
+                        result = autocompleter.executor.get_column_type_list(
+                            table_name, autocompleter.completer.dbname
+                        )
+                        for item in result:
+                            if item.name == hint:
+                                hint = item.name + " " + item.type
+                return f"{hint}"
 
 
 # example

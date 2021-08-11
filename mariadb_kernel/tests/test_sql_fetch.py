@@ -1,3 +1,4 @@
+from collections import namedtuple
 from typing import Type
 from ..mariadb_client import MariaDBClient
 
@@ -1239,3 +1240,24 @@ def test_mariadb_sql_fetch_session_variables(mariadb_server: Type[MariaDBServer]
     client.start()
     sql_fetch = SqlFetch(client, mocklog)
     assert set(["alter_algorithm"]).issubset(sql_fetch.session_variables())
+
+
+def test_mariadb_sql_fetch_column_type(mariadb_server: Type[MariaDBServer]):
+    mocklog = Mock()
+    cfg = ClientConfig(mocklog)  # default config
+
+    mariadb_server(mocklog, cfg)
+
+    client = MariaDBClient(mocklog, cfg)
+    client.start()
+    client.run_statement("create database d1;")
+    client.run_statement("use d1;")
+    client.run_statement("create table t2 (c int(11), b int(11), a int(11));")
+    ColumnType = namedtuple("ColumnType", ["name", "type"])
+    sql_fetch = SqlFetch(client, mocklog)
+    assert [
+        ColumnType("c", "int(11)"),
+        ColumnType("b", "int(11)"),
+        ColumnType("a", "int(11)"),
+    ] == sql_fetch.get_column_type_list("t2", "d1")
+    client.run_statement("drop database d1;")

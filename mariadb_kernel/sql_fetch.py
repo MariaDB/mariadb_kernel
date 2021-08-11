@@ -1,5 +1,6 @@
+from collections import namedtuple
 import enum
-from typing import Callable, List, Tuple
+from typing import Callable, List, NamedTuple, Tuple
 import pandas
 from pandas.core.frame import DataFrame
 from mariadb_kernel.mariadb_client import MariaDBClient
@@ -222,6 +223,33 @@ class SqlFetch:
         if self.maridb_client.iserror():
             raise Exception(f"Client returned an error : {result_html}")
         return result_html
+
+    class ColumnType(NamedTuple):
+        name: str
+        type: str
+
+    def get_column_type_list(self, table: str, db: str) -> List[ColumnType]:
+        column_type_list_query = f"""SELECT COLUMN_NAME, COLUMN_TYPE
+                                     FROM INFORMATION_SCHEMA.COLUMNS
+                                     WHERE
+                                         TABLE_SCHEMA = '{db}' AND
+                                         TABLE_NAME = '{table}'
+                                     ORDER BY ORDINAL_POSITION;"""
+        result_html = self.maridb_client.run_statement(column_type_list_query)
+        if self.maridb_client.iserror():
+            raise Exception(f"Client returned an error : {result_html}")
+
+        if result_html == "Query OK":
+            return []
+        else:
+            ColumnType = namedtuple("ColumnType", ["name", "type"])
+            column_type_list = []
+            df = pandas.read_html(result_html)
+            pandas_table = df[0]
+            for i, column_name in enumerate(pandas_table["COLUMN_NAME"]):
+                column_type = ColumnType(column_name, pandas_table["COLUMN_TYPE"][i])
+                column_type_list.append(column_type)
+            return column_type_list
 
     def get_column_row_html(self, column: str, table: str, db: str, limit: int = 5):
         column_rows_query = f"select {column} from {db}.{table} limit {limit}"
