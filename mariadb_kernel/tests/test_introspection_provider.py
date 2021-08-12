@@ -308,11 +308,7 @@ def test_introspection_provider_introspect_column_with_table_name_is_same_with_f
     client.run_statement("create database db1;")
     client.run_statement("use db1;")
     client.run_statement("create table min (col1 int);")
-
     provider = IntrospectionProvider()
-    manager = MariadbClientManagager(mocklog, cfg)
-    client = manager.client_for_code_block
-    manager.start()
     autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
