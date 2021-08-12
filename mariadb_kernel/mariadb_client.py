@@ -6,6 +6,7 @@
 from pexpect import replwrap, EOF, TIMEOUT, ExceptionPexpect
 from pathlib import Path
 import re
+from uuid import uuid1
 
 
 class MariaREPL(replwrap.REPLWrapper):
@@ -25,7 +26,7 @@ class MariaREPL(replwrap.REPLWrapper):
         # We avoid Pexpect's limitation of PC_MAX_CANON (1024) chars per line
         # and we also avoid more nasty issues like MariaDB client behaviour
         # sending continuation prompt when "\n" is received.
-        stmt_file = ".mariadb_statement"
+        stmt_file = ".mariadb_statement" + "_" + str(uuid1())
         statement_file_path = Path.cwd().joinpath(stmt_file)
         with statement_file_path.open("w") as f:
             f.write(code)

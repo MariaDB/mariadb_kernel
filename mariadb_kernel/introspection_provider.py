@@ -106,18 +106,17 @@ class IntrospectionProvider:
                     if token.ttype == Punctuation and str(token) == "(":
                         last_match_token_text = str(token).lower()
                     elif (
-                        (last_match_token_text == "("
+                        last_match_token_text == "("
                         and token.ttype == Keyword
-                        and str(token).lower() == "values")
-                        or isinstance(token, Values)
-                    ):
+                        and str(token).lower() == "values"
+                    ) or isinstance(token, Values):
                         last_match_token_text = str(token).lower()
                     elif (
                         last_match_token_text.startswith("values")
                         and token.ttype == Keyword
                         and str(token).lower() == "into"
                     ):
-                    
+
                         last_match_token_text = str(token).lower()
                         next_token = parsed_before_cursor[0].token_next(
                             parsed_before_cursor[0].token_index(token)

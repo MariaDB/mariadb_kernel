@@ -71,29 +71,39 @@ class Refresher(object):
         self.completer.set_functions(self.fetch_functions)
         self.refresh_complete = True
         self.old_completer.reset_completions(self.completer)
-        self.log.info("complete refresh_all")
 
     def refresh(self, sync=False):
         if sync:
-            self.executor.update_db_name()
             self.refresh_all()
         else:
             if self.refresh_complete is True:
-                self.executor.update_db_name()
                 self.refresh_thread = Thread(target=self.refresh_all)
                 self.refresh_thread.start()
 
 
 class Autocompleter(object):
-    def __init__(self, mariadb_client: MariaDBClient, log: Logger) -> None:
+    def __init__(
+        self,
+        mariadb_client: MariaDBClient,
+        code_block_mariadb_client: MariaDBClient,
+        log: Logger,
+    ) -> None:
+        self.log = log
+        self.autocompleter_mariadb_client = mariadb_client
         self.executor = SqlFetch(mariadb_client, log)
+        self.code_blcok_executor = SqlFetch(code_block_mariadb_client, log)
         self.completer = SQLAnalyze(log, True)
         self.refresher = Refresher(self.completer, self.executor, log)
         self.refresh()
-        self.log = log
 
     def refresh(self, sync: bool = True):
+        code_block_db_name = self.code_blcok_executor.get_db_name()
+        if self.executor.dbname != code_block_db_name and code_block_db_name != "":
+            self.autocompleter_mariadb_client.run_statement(f"use {code_block_db_name}")
+            self.executor.dbname = self.code_blcok_executor.get_db_name()
         self.refresher.refresh(sync)
+        self.log.info(f"self.completer.dbname : {self.completer.dbname}")
+        self.log.info(f"self.completer.dbmetadata : {self.completer.dbmetadata}")
 
     def get_suggestions(self, code: str, cursor_pos: int):
         # self.refresh()

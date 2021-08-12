@@ -1,3 +1,4 @@
+from mariadb_kernel.kernel import MariadbClientManagager
 from typing import Type
 
 from prompt_toolkit.document import Document
@@ -18,10 +19,11 @@ def test_introspection_provider_introspect_keyword(mariadb_server: Type[MariaDBS
 
     mariadb_server(mocklog, cfg)
 
-    client = MariaDBClient(mocklog, cfg)
-    client.start()
+    manager = MariadbClientManagager(mocklog, cfg)
+    client = manager.client_for_code_block
+    manager.start()
     provider = IntrospectionProvider()
-    autocompleter = Autocompleter(client, mocklog)
+    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
     result = provider.get_instropection(
@@ -39,10 +41,11 @@ def test_introspection_provider_introspect_function(
 
     mariadb_server(mocklog, cfg)
 
-    client = MariaDBClient(mocklog, cfg)
-    client.start()
+    manager = MariadbClientManagager(mocklog, cfg)
+    client = manager.client_for_code_block
+    manager.start()
     provider = IntrospectionProvider()
-    autocompleter = Autocompleter(client, mocklog)
+    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
     result = provider.get_instropection(
@@ -60,11 +63,12 @@ def test_introspection_provider_introspect_database(
 
     mariadb_server(mocklog, cfg)
 
-    client = MariaDBClient(mocklog, cfg)
-    client.start()
+    manager = MariadbClientManagager(mocklog, cfg)
+    client = manager.client_for_code_block
+    manager.start()
     client.run_statement("create database mydb;")
     provider = IntrospectionProvider()
-    autocompleter = Autocompleter(client, mocklog)
+    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
     result = provider.get_instropection(
@@ -83,13 +87,14 @@ def test_introspection_provider_introspect_table(
 
     mariadb_server(mocklog, cfg)
 
-    client = MariaDBClient(mocklog, cfg)
-    client.start()
+    manager = MariadbClientManagager(mocklog, cfg)
+    client = manager.client_for_code_block
+    manager.start()
     client.run_statement("create database mydb;")
     client.run_statement("use mydb;")
     client.run_statement("create table tbl1 (col1 int);")
     provider = IntrospectionProvider()
-    autocompleter = Autocompleter(client, mocklog)
+    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
     result = provider.get_instropection(
@@ -109,15 +114,16 @@ def test_introspection_provider_introspect_table_that_is_not_belong_current_use_
 
     mariadb_server(mocklog, cfg)
 
-    client = MariaDBClient(mocklog, cfg)
-    client.start()
+    manager = MariadbClientManagager(mocklog, cfg)
+    client = manager.client_for_code_block
+    manager.start()
     client.run_statement("create database db1;")
     client.run_statement("create database db2;")
     client.run_statement("use db2;")
     client.run_statement("create table tbl1 (col1 int);")
     client.run_statement("use db1;")
     provider = IntrospectionProvider()
-    autocompleter = Autocompleter(client, mocklog)
+    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
     result = provider.get_instropection(
@@ -138,14 +144,15 @@ def test_introspection_provider_introspect_column(
 
     mariadb_server(mocklog, cfg)
 
-    client = MariaDBClient(mocklog, cfg)
-    client.start()
+    manager = MariadbClientManagager(mocklog, cfg)
+    client = manager.client_for_code_block
+    manager.start()
     client.run_statement("create database db1;")
     client.run_statement("use db1;")
     client.run_statement("create table tbl1 (col1 int);")
 
     provider = IntrospectionProvider()
-    autocompleter = Autocompleter(client, mocklog)
+    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
     result = provider.get_instropection(
@@ -169,14 +176,15 @@ def test_introspection_provider_introspect_column_with_no_table_info(
 
     mariadb_server(mocklog, cfg)
 
-    client = MariaDBClient(mocklog, cfg)
-    client.start()
+    manager = MariadbClientManagager(mocklog, cfg)
+    client = manager.client_for_code_block
+    manager.start()
     client.run_statement("create database db1;")
     client.run_statement("use db1;")
     client.run_statement("create table tbl1 (col1 int);")
 
     provider = IntrospectionProvider()
-    autocompleter = Autocompleter(client, mocklog)
+    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
     result = provider.get_instropection(
@@ -200,14 +208,15 @@ def test_introspection_provider_introspect_column_with_column_name_is_same_with_
 
     mariadb_server(mocklog, cfg)
 
-    client = MariaDBClient(mocklog, cfg)
-    client.start()
+    manager = MariadbClientManagager(mocklog, cfg)
+    client = manager.client_for_code_block
+    manager.start()
     client.run_statement("create database db1;")
     client.run_statement("use db1;")
     client.run_statement("create table tbl1 (min int);")
 
     provider = IntrospectionProvider()
-    autocompleter = Autocompleter(client, mocklog)
+    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
     result = provider.get_instropection(
@@ -231,14 +240,15 @@ def test_introspection_provider_introspect_column_with_column_name_is_same_with_
 
     mariadb_server(mocklog, cfg)
 
-    client = MariaDBClient(mocklog, cfg)
-    client.start()
+    manager = MariadbClientManagager(mocklog, cfg)
+    client = manager.client_for_code_block
+    manager.start()
     client.run_statement("create database db1;")
     client.run_statement("use db1;")
     client.run_statement("create table tbl1 (type int);")
 
     provider = IntrospectionProvider()
-    autocompleter = Autocompleter(client, mocklog)
+    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
     result = provider.get_instropection(
@@ -262,14 +272,15 @@ def test_introspection_provider_introspect_function_with_function_name_is_same_w
 
     mariadb_server(mocklog, cfg)
 
-    client = MariaDBClient(mocklog, cfg)
-    client.start()
+    manager = MariadbClientManagager(mocklog, cfg)
+    client = manager.client_for_code_block
+    manager.start()
     client.run_statement("create database db1;")
     client.run_statement("use db1;")
     client.run_statement("create table tbl1 (min int);")
 
     provider = IntrospectionProvider()
-    autocompleter = Autocompleter(client, mocklog)
+    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
     result = provider.get_instropection(
@@ -299,7 +310,10 @@ def test_introspection_provider_introspect_column_with_table_name_is_same_with_f
     client.run_statement("create table min (col1 int);")
 
     provider = IntrospectionProvider()
-    autocompleter = Autocompleter(client, mocklog)
+    manager = MariadbClientManagager(mocklog, cfg)
+    client = manager.client_for_code_block
+    manager.start()
+    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
     result = provider.get_instropection(
@@ -322,14 +336,15 @@ def test_introspection_provider_introspect_column_with_table_name_is_same_with_k
 
     mariadb_server(mocklog, cfg)
 
-    client = MariaDBClient(mocklog, cfg)
-    client.start()
+    manager = MariadbClientManagager(mocklog, cfg)
+    client = manager.client_for_code_block
+    manager.start()
     client.run_statement("create database db1;")
     client.run_statement("use db1;")
     client.run_statement("create table type (col1 int);")
 
     provider = IntrospectionProvider()
-    autocompleter = Autocompleter(client, mocklog)
+    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
     result = provider.get_instropection(
@@ -353,15 +368,16 @@ def test_introspection_provider_introspect_column_with_column_name_is_same_with_
 
     mariadb_server(mocklog, cfg)
 
-    client = MariaDBClient(mocklog, cfg)
-    client.start()
+    manager = MariadbClientManagager(mocklog, cfg)
+    client = manager.client_for_code_block
+    manager.start()
     client.run_statement("create database db1;")
     client.run_statement("use db1;")
     client.run_statement("create table col_tabl (col1 int);")
     client.run_statement("create table tabl2 (col_tabl int);")
 
     provider = IntrospectionProvider()
-    autocompleter = Autocompleter(client, mocklog)
+    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
     result = provider.get_instropection(
@@ -386,14 +402,15 @@ def test_introspection_provider_introspect_insert_into_after_VALUES_would_sugges
 
     mariadb_server(mocklog, cfg)
 
-    client = MariaDBClient(mocklog, cfg)
-    client.start()
+    manager = MariadbClientManagager(mocklog, cfg)
+    client = manager.client_for_code_block
+    manager.start()
     client.run_statement("create database db1;")
     client.run_statement("use db1;")
     client.run_statement("create table t1 (a int, b int, c int);")
 
     provider = IntrospectionProvider()
-    autocompleter = Autocompleter(client, mocklog)
+    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
     result = provider.get_instropection(
@@ -428,14 +445,15 @@ def test_introspection_provider_introspect_insert_into_after_VALUES_would_sugges
 
     mariadb_server(mocklog, cfg)
 
-    client = MariaDBClient(mocklog, cfg)
-    client.start()
+    manager = MariadbClientManagager(mocklog, cfg)
+    client = manager.client_for_code_block
+    manager.start()
     client.run_statement("create database db1;")
     client.run_statement("use db1;")
     client.run_statement("create table t1 (a int, b int, c int);")
 
     provider = IntrospectionProvider()
-    autocompleter = Autocompleter(client, mocklog)
+    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
     result = provider.get_instropection(
@@ -460,14 +478,15 @@ def test_introspection_provider_introspect_insert_into_after_VALUES_would_sugges
 
     mariadb_server(mocklog, cfg)
 
-    client = MariaDBClient(mocklog, cfg)
-    client.start()
+    manager = MariadbClientManagager(mocklog, cfg)
+    client = manager.client_for_code_block
+    manager.start()
     client.run_statement("create database db1;")
     client.run_statement("use db1;")
     client.run_statement("create table t1 (a int);")
 
     provider = IntrospectionProvider()
-    autocompleter = Autocompleter(client, mocklog)
+    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
     result = provider.get_instropection(
@@ -492,14 +511,15 @@ def test_introspection_provider_introspect_insert_into_after_VALUES_would_sugges
 
     mariadb_server(mocklog, cfg)
 
-    client = MariaDBClient(mocklog, cfg)
-    client.start()
+    manager = MariadbClientManagager(mocklog, cfg)
+    client = manager.client_for_code_block
+    manager.start()
     client.run_statement("create database db1;")
     client.run_statement("use db1;")
     client.run_statement("create table t1 (a int);")
 
     provider = IntrospectionProvider()
-    autocompleter = Autocompleter(client, mocklog)
+    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
     result = provider.get_instropection(
@@ -524,14 +544,15 @@ def test_introspection_provider_introspect_insert_into_after_VALUES_would_sugges
 
     mariadb_server(mocklog, cfg)
 
-    client = MariaDBClient(mocklog, cfg)
-    client.start()
+    manager = MariadbClientManagager(mocklog, cfg)
+    client = manager.client_for_code_block
+    manager.start()
     client.run_statement("create database db1;")
     client.run_statement("use db1;")
     client.run_statement("create table t1 (c int, b int, a int);")
 
     provider = IntrospectionProvider()
-    autocompleter = Autocompleter(client, mocklog)
+    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
     result = provider.get_instropection(
@@ -556,18 +577,22 @@ def test_introspection_provider_introspect_insert_into_after_VALUES_would_sugges
 
     mariadb_server(mocklog, cfg)
 
-    client = MariaDBClient(mocklog, cfg)
-    client.start()
+    manager = MariadbClientManagager(mocklog, cfg)
+    client = manager.client_for_code_block
+    manager.start()
     client.run_statement("create database db1;")
     client.run_statement("use db1;")
     client.run_statement("create table t1 (c int, b int, a int);")
 
     provider = IntrospectionProvider()
-    autocompleter = Autocompleter(client, mocklog)
+    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
     result = provider.get_instropection(
-        Document("insert into t1 VALUES (1,2), (3,4), (5,", len("insert into t1 VALUES (1,2), (3,4), (5,")),
+        Document(
+            "insert into t1 VALUES (1,2), (3,4), (5,",
+            len("insert into t1 VALUES (1,2), (3,4), (5,"),
+        ),
         autocompleter.completer,
     )
 

@@ -28,6 +28,23 @@ import signal
 _EXPERIMENTAL_KEY_NAME = "_jupyter_types_experimental"
 
 
+class MariadbClientManagager:
+    client_for_code_block: MariaDBClient
+    client_for_autocompleter: MariaDBClient
+
+    def __init__(self, log: logging.Logger, client_config: ClientConfig) -> None:
+        self.client_for_code_block = MariaDBClient(log, client_config)
+        self.client_for_autocompleter = MariaDBClient(log, client_config)
+
+    def start(self):
+        self.client_for_code_block.start()
+        self.client_for_autocompleter.start()
+
+    def stop(self):
+        self.client_for_code_block.stop()
+        self.client_for_autocompleter.stop()
+
+
 class MariaDBKernel(Kernel):
     implementation = "MariaDB"
     implementation_version = __version__
@@ -42,7 +59,10 @@ class MariaDBKernel(Kernel):
         Kernel.__init__(self, **kwargs)
         self.delimiter = ";"
         self.client_config = ClientConfig(self.log)
-        self.mariadb_client = MariaDBClient(self.log, self.client_config)
+        self.mariadb_client_manager = MariadbClientManagager(
+            self.log, self.client_config
+        )
+        self.mariadb_client = self.mariadb_client_manager.client_for_code_block
         self.mariadb_server = None
         self.data = {"last_select": pandas.DataFrame([])}
 
@@ -52,7 +72,7 @@ class MariaDBKernel(Kernel):
             self.log.setLevel(logging.INFO)
 
         try:
-            self.mariadb_client.start()
+            self.mariadb_client_manager.start()
         except ServerIsDownError:
             if not self.client_config.start_server():
                 self.log.error(
@@ -69,9 +89,13 @@ class MariaDBKernel(Kernel):
 
             # Reconnect the client now that the server is up
             if self.mariadb_server.is_up():
-                self.mariadb_client.start()
+                self.mariadb_client_manager.start()
 
-        self.autocompleter = Autocompleter(self.mariadb_client, self.log)
+        self.autocompleter = Autocompleter(
+            self.mariadb_client_manager.client_for_autocompleter,
+            self.mariadb_client_manager.client_for_code_block,
+            self.log,
+        )
 
     def get_delimiter(self):
         return self.delimiter
@@ -190,7 +214,7 @@ class MariaDBKernel(Kernel):
                     f"Failed querying server (of number of clients connected), error: {e}"
                 )
 
-        self.mariadb_client.stop()
+        self.mariadb_client_manager.stop()
 
         if num_clients is not None and num_clients <= 1:
             self.log.info("No more clients connected to server")
@@ -199,7 +223,11 @@ class MariaDBKernel(Kernel):
     def do_complete(self, code, cursor_pos):
         if hasattr(self, "autocompleter") is False:
             self.log.info("No autocompleter, create one")
-            self.autocompleter = Autocompleter(self.mariadb_client, self.log)
+            self.autocompleter = Autocompleter(
+                self.mariadb_client_manager.client_for_autocompleter,
+                self.mariadb_client_manager.client_for_code_block,
+                self.log,
+            )
         completion_list = self.autocompleter.get_suggestions(code, cursor_pos)
         match_text_list = [completion.text for completion in completion_list]
         self.log.info(f"match_text_list: {match_text_list}")
