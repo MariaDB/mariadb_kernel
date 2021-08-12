@@ -458,3 +458,23 @@ def test_mariadb_autocompleter_global_variables_no_session_variable_with_text(
             )
         ),
     )
+
+
+def test_mariadb_autocompleter_multi_mariadb_client_selected_database_sync(
+    mariadb_server: Type[MariaDBServer],
+):
+    mocklog = Mock()
+    cfg = ClientConfig(mocklog, name="nonexistentcfg.json")  # default config
+
+    mariadb_server(mocklog, cfg)
+
+    manager = MariadbClientManagager(mocklog, cfg)
+    client = manager.client_for_code_block
+    manager.start()
+    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
+    client.run_statement("create database db1;")
+    client.run_statement("use db1;")
+    autocompleter.refresh()
+    assert manager.client_for_autocompleter.run_statement(
+        "SELECT DATABASE();"
+    ) == manager.client_for_code_block.run_statement("SELECT DATABASE();")
