@@ -1,8 +1,7 @@
-from mariadb_kernel.kernel import MariadbClientManagager
 from typing import Type
 
 from prompt_toolkit.document import Document
-from ..mariadb_client import MariaDBClient
+from ..kernel import MariadbClientManagager
 
 from ..mariadb_server import MariaDBServer
 from ..client_config import ClientConfig
@@ -303,8 +302,9 @@ def test_introspection_provider_introspect_column_with_table_name_is_same_with_f
 
     mariadb_server(mocklog, cfg)
 
-    client = MariaDBClient(mocklog, cfg)
-    client.start()
+    manager = MariadbClientManagager(mocklog, cfg)
+    client = manager.client_for_code_block
+    manager.start()
     client.run_statement("create database db1;")
     client.run_statement("use db1;")
     client.run_statement("create table min (col1 int);")

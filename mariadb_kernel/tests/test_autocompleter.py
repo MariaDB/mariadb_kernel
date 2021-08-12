@@ -1,9 +1,7 @@
-from mmap import MADV_NOHUGEPAGE
-from mariadb_kernel.kernel import MariadbClientManagager
 from typing import List, Type
 
 from prompt_toolkit.completion.base import Completion
-from ..mariadb_client import MariaDBClient
+from ..kernel import MariadbClientManagager
 
 from ..mariadb_server import MariaDBServer
 from ..client_config import ClientConfig
