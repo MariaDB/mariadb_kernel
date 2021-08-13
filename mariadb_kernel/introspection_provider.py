@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Union
 from bs4.element import Tag
 
 from sqlparse.sql import Function, Identifier, IdentifierList, Parenthesis, Values
@@ -24,6 +24,47 @@ def first_word(text):
             return matches.group(0)
         else:
             return ""
+
+
+def convert_help_text_to_beautiful_html(text):
+    regex_for_url = r"(https://.+/)"
+    result = re.sub(
+        regex_for_url,
+        r"<a href='\1' target='_blank'>\1</a>",
+        text,
+        flags=re.MULTILINE | re.IGNORECASE,
+    )
+
+    regex_for_header = r"^Name:.+\nDescription:"
+    result = re.sub(regex_for_header, "", result, flags=re.MULTILINE | re.IGNORECASE)
+    header_style = "style='margin: 0'"
+    regex_for_syntax_header = r"^Syntax:"
+    result = re.sub(
+        regex_for_syntax_header,
+        f"<h2 {header_style}>Syntax</h2>",
+        result,
+        flags=re.MULTILINE | re.IGNORECASE,
+    )
+    regex_for_examples_header = r"^Examples:"
+    result = re.sub(
+        regex_for_examples_header,
+        f"<h2 {header_style}>Example</h2>",
+        result,
+        flags=re.MULTILINE | re.IGNORECASE,
+    )
+    regex_for_mariadb_command = r"(Mariadb>)(.+;)"
+    result = re.sub(
+        regex_for_mariadb_command,
+        r"<b>\1</b><code>\2</code>",
+        result,
+        flags=re.MULTILINE | re.IGNORECASE,
+    )
+    regex_for_right_arrow = r"->"
+    result = re.sub(
+        regex_for_right_arrow, "&rarr;", result, flags=re.MULTILINE | re.IGNORECASE
+    )
+    result = result.replace("\n\n", "\n").lstrip("\n").replace("\n", "<br/>")
+    return result
 
 
 class IntrospectionProvider:
@@ -200,11 +241,11 @@ class IntrospectionProvider:
                         return {"word": word, "type": "table", "database": table_dbName}
         if suggest_dict.get("database") and word in completer.databases:
             return {"word": word, "type": "database"}
-        if suggest_dict.get("function") and word in [
+        if suggest_dict.get("function") and word.lower() in [
             function.lower() for function in completer.functions
         ]:
             return {"word": word, "type": "function"}
-        if suggest_dict.get("keyword") and word in [
+        if suggest_dict.get("keyword") and word.lower() in [
             keyword.lower() for keyword in completer.keywords
         ]:
             return {"word": word, "type": "keyword"}
@@ -241,11 +282,12 @@ class IntrospectionProvider:
                 return self.render_doc_header("keyword")
             elif word_type == "function":
                 if word:
-                    doc: Union[List[str], None] = self.func_doc.get(
-                        word.lower()
-                    ) or self.func_doc.get(word.upper())
-                    if doc:
-                        return f"{self.render_doc_header('function')}{''.join(doc)}"
+                    doc = autocompleter.executor.get_help_text(word)
+                    if doc == "Query OK":
+                        doc = ""
+                    # convert text to html and beautify doc
+                    doc = convert_help_text_to_beautiful_html(doc)
+                    return f"{self.render_doc_header('function')}{''.join(doc)}"
                 return f"{self.render_doc_header('function')}"
             elif word_type == "database":
                 if word:

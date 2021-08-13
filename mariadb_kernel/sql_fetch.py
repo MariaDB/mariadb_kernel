@@ -251,6 +251,11 @@ class SqlFetch:
                 column_type_list.append(column_type)
             return column_type_list
 
+    def get_help_text(self, name: str) -> str:
+        help_text_query = f"""help '{name}';"""
+        text = self.maridb_client.run_statement(help_text_query)
+        return text
+
     def get_column_row_html(self, column: str, table: str, db: str, limit: int = 5):
         column_rows_query = f"select {column} from {db}.{table} limit {limit}"
         result_html = self.maridb_client.run_statement(column_rows_query)

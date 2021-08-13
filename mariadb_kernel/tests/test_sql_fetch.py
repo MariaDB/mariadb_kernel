@@ -1261,3 +1261,17 @@ def test_mariadb_sql_fetch_column_type(mariadb_server: Type[MariaDBServer]):
         ColumnType("a", "int(11)"),
     ] == sql_fetch.get_column_type_list("t2", "d1")
     client.run_statement("drop database d1;")
+
+
+def test_mariadb_sql_fetch_get_help_text(mariadb_server: Type[MariaDBServer]):
+    mocklog = Mock()
+    cfg = ClientConfig(mocklog)  # default config
+
+    mariadb_server(mocklog, cfg)
+
+    client = MariaDBClient(mocklog, cfg)
+    client.start()
+    sql_fetch = SqlFetch(client, mocklog)
+    # just part of documentation
+    assert sql_fetch.get_help_text("min").startswith("Name")
+    assert sql_fetch.get_help_text("asdfasdf").startswith("Query OK")
