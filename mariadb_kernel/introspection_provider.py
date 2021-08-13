@@ -68,7 +68,6 @@ def convert_help_text_to_beautiful_html(text):
 
 
 class IntrospectionProvider:
-
     def get_instropection(self, document: Document, completer: SQLAnalyze):
         # return word's type and word's text
         last_partial_token_right = first_word(document.text_after_cursor)
@@ -259,7 +258,7 @@ class IntrospectionProvider:
 
     def get_introspection_explain_html(
         self, document: Document, autocompleter: Autocompleter
-    ):
+    ) -> Union[str, None]:
         result = self.get_instropection(document, autocompleter.completer)
         if result:
             word_type = result.get("type")
@@ -273,8 +272,8 @@ class IntrospectionProvider:
                         users = autocompleter.executor.users()
                         user_list_text = [user[0] for user in users]
                         users_text = "<br/>".join(user_list_text)
-                        return f"{self.render_doc_header('keyword')}<h2>all user list : </h2>{users_text}"
-                return self.render_doc_header("keyword")
+                        return f"<h2>all user list : </h2>{users_text}"
+                return None
             elif word_type == "function":
                 if word:
                     doc = autocompleter.executor.get_help_text(word)

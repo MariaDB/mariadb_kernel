@@ -263,6 +263,8 @@ class MariaDBKernel(Kernel):
             )
             or ""
         )
+        if result_html is None or result_html == "":
+            return {"status": "ok", "data": {}, "metadata": {}, "found": False}
         return {
             "status": "ok",
             "data": {"text/html": result_html},
