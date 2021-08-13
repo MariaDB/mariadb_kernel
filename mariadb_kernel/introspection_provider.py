@@ -68,11 +68,6 @@ def convert_help_text_to_beautiful_html(text):
 
 
 class IntrospectionProvider:
-    def __init__(self) -> None:
-        self.func_doc: dict = {}
-        parent_abs_path = str(Path(__file__).parent.resolve())  # ending no /
-        with open(parent_abs_path + "/data/func_doc.json", "r") as f:
-            self.func_doc = json.load(f)
 
     def get_instropection(self, document: Document, completer: SQLAnalyze):
         # return word's type and word's text
