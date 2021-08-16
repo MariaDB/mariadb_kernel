@@ -591,3 +591,24 @@ def test_mariadb_autocompleter_suggest_the_table_not_under_current_selected_data
     )
     client.run_statement("drop database d1;")
     client.run_statement("drop database d2;")
+
+
+def test_mariadb_autocompleter_suggest_keyword_after_user_column(
+    mariadb_server: Type[MariaDBServer],
+):
+    mocklog = Mock()
+    cfg = ClientConfig(mocklog, name="nonexistentcfg.json")  # default config
+
+    mariadb_server(mocklog, cfg)
+
+    manager = MariadbClientManagager(mocklog, cfg)
+    client = manager.client_for_code_block
+    manager.start()
+    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
+    client.run_statement("create database d1;")
+    client.run_statement("use d1;")
+    autocompleter.refresh()
+    assert ["from_base64", "from_days", "from_unixtime", "from"] == get_text_list(
+        autocompleter.get_suggestions("select user fro", len("select user fro")),
+    )
+    client.run_statement("drop database d1;")

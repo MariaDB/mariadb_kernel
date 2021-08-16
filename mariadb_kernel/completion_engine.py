@@ -1,5 +1,5 @@
 import sqlparse
-from sqlparse.sql import Comparison, Identifier, IdentifierList, Where
+from sqlparse.sql import Comparison, Identifier, IdentifierList, Token, Where
 from sqlparse.tokens import Punctuation
 from mycli.packages.parseutils import last_word, extract_tables, find_prev_keyword
 from mycli.packages.special import parse_special_command
@@ -257,6 +257,13 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
         else:
             return [{"type": "user"}]
     elif token_v in ("user", "for"):
+        # for edge cases get_suggestions("select user fro", len("select user fro"))
+        if isinstance(token, Token):
+            if token.parent.token_first().value.lower() == "select":
+                token_v = "select"
+                return suggest_based_on_last_token(
+                    "select", text_before_cursor, full_text, identifier
+                )
         return [{"type": "user"}]
     elif token_v in ("select", "where", "having"):
         # Check for a table alias or schema qualification
