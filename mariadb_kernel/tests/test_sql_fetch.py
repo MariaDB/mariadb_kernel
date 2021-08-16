@@ -1274,7 +1274,7 @@ def test_mariadb_sql_fetch_get_help_text(mariadb_server: Type[MariaDBServer]):
     sql_fetch = SqlFetch(client, mocklog)
     # just part of documentation
     assert sql_fetch.get_help_text("min").startswith("Name")
-    assert sql_fetch.get_help_text("asdfasdf").startswith("Query OK")
+    assert sql_fetch.get_help_text("asdfasdf") == ""
 
 
 def test_mariadb_sql_fetch_get_specific_table_columns_list(
