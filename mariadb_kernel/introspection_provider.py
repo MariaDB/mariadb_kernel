@@ -68,7 +68,8 @@ def convert_help_text_to_beautiful_html(text):
 
 
 class IntrospectionProvider:
-    def get_instropection(self, document: Document, completer: SQLAnalyze):
+    def get_instropection(self, document: Document, aucompleter: Autocompleter):
+        completer = aucompleter.completer
         # return word's type and word's text
         last_partial_token_right = first_word(document.text_after_cursor)
         last_partial_token_left = last_word(document.text_before_cursor)
@@ -129,6 +130,26 @@ class IntrospectionProvider:
                             "database": completer.dbname,
                             "table": key,
                         }
+            # actively fetch system table's column
+            if len(tables) > 0:
+                database = tables[0][0]
+                table = tables[0][1]
+                if database and table:
+                    database_table_dict = completer.dbmetadata["tables"].get(database)
+                    if database_table_dict is None:
+                        # fetch the table's column
+                        column_list = (
+                            aucompleter.executor.get_specific_table_columns_list(
+                                table, database
+                            )
+                        )
+                        if word.lower() in [column.lower() for column in column_list]:
+                            return {
+                                "word": word,
+                                "type": "column",
+                                "database": database,
+                                "table": table,
+                            }
             # for statement like 「insert into t1 (a int, b int, c int) VALUES (」 would provide column hint
             parsed_before_cursor = sqlparse.parse(document.text[:end_position])
             if len(parsed_before_cursor) > 0:
@@ -259,7 +280,7 @@ class IntrospectionProvider:
     def get_introspection_explain_html(
         self, document: Document, autocompleter: Autocompleter
     ) -> Union[str, None]:
-        result = self.get_instropection(document, autocompleter.completer)
+        result = self.get_instropection(document, autocompleter)
         if result:
             word_type = result.get("type")
             word = result.get("word")

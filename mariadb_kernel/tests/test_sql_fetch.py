@@ -1275,3 +1275,20 @@ def test_mariadb_sql_fetch_get_help_text(mariadb_server: Type[MariaDBServer]):
     # just part of documentation
     assert sql_fetch.get_help_text("min").startswith("Name")
     assert sql_fetch.get_help_text("asdfasdf").startswith("Query OK")
+
+
+def test_mariadb_sql_fetch_get_specific_table_columns_list(
+    mariadb_server: Type[MariaDBServer],
+):
+    mocklog = Mock()
+    cfg = ClientConfig(mocklog)  # default config
+
+    mariadb_server(mocklog, cfg)
+
+    client = MariaDBClient(mocklog, cfg)
+    client.start()
+    sql_fetch = SqlFetch(client, mocklog)
+    # just test part of column
+    assert set(["Host", "User", "Password"]).issubset(
+        sql_fetch.get_specific_table_columns_list("user", "mysql")
+    )

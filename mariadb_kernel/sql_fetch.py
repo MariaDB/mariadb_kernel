@@ -263,6 +263,10 @@ class SqlFetch:
             raise Exception(f"Client returned an error : {result_html}")
         return result_html
 
+    def get_specific_table_columns_list(self, table: str, db: str):
+        column_query = f"explain {db}.{table}"
+        return self.fetch_info(column_query, lambda df: list(df[0]["Field"]))
+
     def change_db_name(self, db):
         self.dbname = db
 

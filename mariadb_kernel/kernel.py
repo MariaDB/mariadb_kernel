@@ -257,11 +257,8 @@ class MariaDBKernel(Kernel):
 
     def do_inspect(self, code, cursor_pos, detail_level):
         introspection_provider = IntrospectionProvider()
-        result_html = (
-            introspection_provider.get_introspection_explain_html(
-                Document(code, int(cursor_pos)), self.autocompleter
-            )
-            or ""
+        result_html = introspection_provider.get_introspection_explain_html(
+            Document(code, int(cursor_pos)), self.autocompleter
         )
         if result_html is None or result_html == "":
             return {"status": "ok", "data": {}, "metadata": {}, "found": False}

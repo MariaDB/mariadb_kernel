@@ -1,5 +1,5 @@
 import sqlparse
-from sqlparse.sql import Comparison, Identifier, Where
+from sqlparse.sql import Comparison, Identifier, IdentifierList, Where
 from sqlparse.tokens import Punctuation
 from mycli.packages.parseutils import last_word, extract_tables, find_prev_keyword
 from mycli.packages.special import parse_special_command
@@ -335,6 +335,29 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
     elif token_v.endswith(",") or is_operand(token_v) or token_v in ["=", "and", "or"]:
         prev_keyword, text_before_cursor = find_prev_keyword(text_before_cursor)
         if prev_keyword:
+            if token_v.endswith(","):
+                # handle edge case like mistake column name for keyword
+                # autocompleter.get_suggestions("select user, Passwor from mysql.user;", len("select user, Passwor"))
+                if prev_keyword and prev_keyword.value.lower() == "user":
+                    parent_first_token = prev_keyword.parent.token_first()
+                    if parent_first_token.value.lower() == "select":
+                        return suggest_based_on_last_token(
+                            "select", text_before_cursor, full_text, identifier
+                        )
+                    elif (
+                        isinstance(parent_first_token.parent, IdentifierList)
+                        and parent_first_token.parent.parent
+                    ):
+                        parent_parent_first_token = (
+                            parent_first_token.parent.parent.token_first()
+                        )
+                        if (
+                            parent_parent_first_token
+                            and parent_parent_first_token.value.lower() == "select"
+                        ):
+                            return suggest_based_on_last_token(
+                                "select", text_before_cursor, full_text, identifier
+                            )
             return suggest_based_on_last_token(
                 prev_keyword, text_before_cursor, full_text, identifier
             )

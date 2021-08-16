@@ -110,6 +110,7 @@ class Autocompleter(object):
         result = self.completer.get_completions(
             document=Document(text=code, cursor_position=cursor_pos),
             complete_event=None,
+            executor=self.executor,
             smart_completion=True,
         )
         return list(result)

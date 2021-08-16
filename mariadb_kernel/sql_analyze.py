@@ -1,3 +1,4 @@
+from mariadb_kernel.sql_fetch import SqlFetch
 from typing import Generator, List, Tuple
 
 from re import compile, escape
@@ -1230,7 +1231,9 @@ class SQLAnalyze(Completer):
             )
         list.extend(new_comletion_list)
 
-    def get_completions(self, document, complete_event, smart_completion=None):
+    def get_completions(
+        self, document, complete_event, executor: SqlFetch, smart_completion=None
+    ):
         word_before_cursor = document.get_word_before_cursor(WORD=True)
         if smart_completion is None:
             smart_completion = self.smart_completion
@@ -1259,7 +1262,18 @@ class SQLAnalyze(Completer):
                         for (col, count) in Counter(scoped_cols).items()
                         if count > 1 and col != "*"
                     ]
-
+                # actively fetch system table's column
+                if len(tables) > 0:
+                    database = tables[0][0]
+                    table = tables[0][1]
+                    if database and table:
+                        database_table_dict = self.dbmetadata["tables"].get(database)
+                        if database_table_dict is None:
+                            # fetch the table's column
+                            column_list = executor.get_specific_table_columns_list(
+                                table, database
+                            )
+                            scoped_cols.extend(column_list)
                 cols = self.find_matches(word_before_cursor, scoped_cols)
                 self.extend_with_type(completions, cols, suggestion["type"])
 

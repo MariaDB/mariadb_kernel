@@ -16,6 +16,14 @@ def get_text_list(completions: List[Completion]):
     return [completion.text for completion in completions]
 
 
+def get_text_list_by_type(completions: List[Completion], type: str):
+    return [
+        completion.text
+        for completion in completions
+        if completion.display_meta_text == type
+    ]
+
+
 def test_mariadb_autocompleter_keywords_suggestion(mariadb_server: Type[MariaDBServer]):
     mocklog = Mock()
     cfg = ClientConfig(mocklog, name="nonexistentcfg.json")  # default config
@@ -478,3 +486,73 @@ def test_mariadb_autocompleter_multi_mariadb_client_selected_database_sync(
     assert manager.client_for_autocompleter.run_statement(
         "SELECT DATABASE();"
     ) == manager.client_for_code_block.run_statement("SELECT DATABASE();")
+
+
+def test_mariadb_autocompleter_column_suggest_for_system_table(
+    mariadb_server: Type[MariaDBServer],
+):
+    mocklog = Mock()
+    cfg = ClientConfig(mocklog, name="nonexistentcfg.json")  # default config
+
+    mariadb_server(mocklog, cfg)
+
+    manager = MariadbClientManagager(mocklog, cfg)
+    client = manager.client_for_code_block
+    manager.start()
+    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
+    client.run_statement("create database db1;")
+    client.run_statement("use db1;")
+    autocompleter.refresh()
+    assert ["Password", "password_expired"] == get_text_list_by_type(
+        autocompleter.get_suggestions(
+            "select user, Passwor from mysql.user;", len("select user, Passwor")
+        ),
+        "column",
+    )
+
+
+def test_mariadb_autocompleter_column_suggest_for_system_table_2(
+    mariadb_server: Type[MariaDBServer],
+):
+    mocklog = Mock()
+    cfg = ClientConfig(mocklog, name="nonexistentcfg.json")  # default config
+
+    mariadb_server(mocklog, cfg)
+
+    manager = MariadbClientManagager(mocklog, cfg)
+    client = manager.client_for_code_block
+    manager.start()
+    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
+    client.run_statement("create database db1;")
+    client.run_statement("use db1;")
+    autocompleter.refresh()
+    assert ["Select_priv"] == get_text_list_by_type(
+        autocompleter.get_suggestions(
+            "select user, password, Select_priv from mysql.user;",
+            len("select user, password, Select_pri"),
+        ),
+        "column",
+    )
+
+
+def test_mariadb_autocomple_actively_fetch_system_table_columns(
+    mariadb_server: Type[MariaDBServer],
+):
+    mocklog = Mock()
+    cfg = ClientConfig(mocklog, name="nonexistentcfg.json")  # default config
+
+    mariadb_server(mocklog, cfg)
+
+    manager = MariadbClientManagager(mocklog, cfg)
+    client = manager.client_for_code_block
+    manager.start()
+    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
+    client.run_statement("create database db1;")
+    client.run_statement("use db1;")
+    autocompleter.refresh()
+    assert ["TABLE_NAME"] == get_text_list_by_type(
+        autocompleter.get_suggestions(
+            "select TABLE_NAM from information_schema.TABLES;", len("select TABLE_NAM")
+        ),
+        "column",
+    )
