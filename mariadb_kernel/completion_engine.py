@@ -303,6 +303,10 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
         if token_v != "truncate":
             suggest.append({"type": "view", "schema": schema})
 
+        # suggest database when not appear database in select, insert into ... like statement
+        if len(schema) == 0:
+            suggest.append({"type": "database", "table": ""})
+
         return suggest
 
     elif token_v in ("table", "view", "function"):

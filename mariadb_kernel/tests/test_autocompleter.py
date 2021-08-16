@@ -317,6 +317,54 @@ def test_mariadb_autocompleter_database_before_table_name_under_partial_database
     client.run_statement("drop database da1;")
     client.run_statement("drop database db2;")
 
+def test_mariadb_autocompleter_database_with_select_statement(
+    mariadb_server: Type[MariaDBServer],
+):
+    mocklog = Mock()
+    cfg = ClientConfig(mocklog, name="nonexistentcfg.json")  # default config
+
+    mariadb_server(mocklog, cfg)
+
+    manager = MariadbClientManagager(mocklog, cfg)
+    client = manager.client_for_code_block
+    manager.start()
+    client.run_statement("create database d1;")
+    client.run_statement("use d1;")
+    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
+    autocompleter.refresh()
+
+    unittest.TestCase().assertListEqual(
+        ["mysql"],
+        get_text_list(
+            autocompleter.get_suggestions("select * from mysq", len("select * from mysq"))
+        ),
+    )
+    client.run_statement("drop database d1;")
+
+
+def test_mariadb_autocompleter_database_with_describe_statement(
+    mariadb_server: Type[MariaDBServer],
+):
+    mocklog = Mock()
+    cfg = ClientConfig(mocklog, name="nonexistentcfg.json")  # default config
+
+    mariadb_server(mocklog, cfg)
+
+    manager = MariadbClientManagager(mocklog, cfg)
+    client = manager.client_for_code_block
+    manager.start()
+    client.run_statement("create database d1;")
+    client.run_statement("use d1;")
+    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
+    autocompleter.refresh()
+
+    unittest.TestCase().assertListEqual(
+        ["mysql"],
+        get_text_list(
+            autocompleter.get_suggestions("describe mysq", len("describe mysq"))
+        ),
+    )
+    client.run_statement("drop database d1;")
 
 def test_mariadb_autocompleter_variables_suggestion_with_empty_text(
     mariadb_server: Type[MariaDBServer],
