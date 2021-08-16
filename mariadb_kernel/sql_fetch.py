@@ -196,6 +196,8 @@ class SqlFetch:
         result_html = self.maridb_client.run_statement(tables_from_db_query)
         if self.maridb_client.iserror():
             raise Exception(f"Client returned an error : {result_html}")
+        if result_html == "Query OK":
+            result_html = ""
         return result_html
 
     def get_table_schema_html(self, table: str, db: str):
@@ -203,6 +205,8 @@ class SqlFetch:
         result_html = self.maridb_client.run_statement(table_schema_query)
         if self.maridb_client.iserror():
             raise Exception(f"Client returned an error : {result_html}")
+        if result_html == "Query OK":
+            result_html = ""
         return result_html
 
     def get_partial_table_row_html(self, table: str, db: str, limit: int = 5):
@@ -210,6 +214,8 @@ class SqlFetch:
         result_html = self.maridb_client.run_statement(table_rows_query)
         if self.maridb_client.iserror():
             raise Exception(f"Client returned an error : {result_html}")
+        if result_html == "Query OK":
+            result_html = ""
         return result_html
 
     def get_column_type_html(self, column: str, table: str, db: str):
@@ -222,6 +228,8 @@ class SqlFetch:
         result_html = self.maridb_client.run_statement(column_type_query)
         if self.maridb_client.iserror():
             raise Exception(f"Client returned an error : {result_html}")
+        if result_html == "Query OK":
+            result_html = ""
         return result_html
 
     class ColumnType(NamedTuple):
@@ -254,6 +262,8 @@ class SqlFetch:
     def get_help_text(self, name: str) -> str:
         help_text_query = f"""help '{name}';"""
         text = self.maridb_client.run_statement(help_text_query)
+        if text == "Query OK":
+            text = ""
         return text
 
     def get_column_row_html(self, column: str, table: str, db: str, limit: int = 5):
@@ -261,6 +271,8 @@ class SqlFetch:
         result_html = self.maridb_client.run_statement(column_rows_query)
         if self.maridb_client.iserror():
             raise Exception(f"Client returned an error : {result_html}")
+        if result_html == "Query OK":
+            result_html = ""
         return result_html
 
     def get_specific_table_columns_list(self, table: str, db: str):

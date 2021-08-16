@@ -298,8 +298,6 @@ class IntrospectionProvider:
             elif word_type == "function":
                 if word:
                     doc = autocompleter.executor.get_help_text(word)
-                    if doc == "Query OK":
-                        doc = ""
                     # convert text to html and beautify doc
                     doc = convert_help_text_to_beautiful_html(doc)
                     return f"{self.render_doc_header('function')}{''.join(doc)}"
