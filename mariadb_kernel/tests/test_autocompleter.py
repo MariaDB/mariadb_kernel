@@ -665,6 +665,7 @@ def test_mariadb_autocompleter_suggest_keyword_after_user_column(
     )
     client.run_statement("drop database d1;")
 
+
 def test_mariadb_autocompleter_suggest_nothing_after_insert_into_values_paren(
     mariadb_server: Type[MariaDBServer],
 ):
@@ -682,6 +683,8 @@ def test_mariadb_autocompleter_suggest_nothing_after_insert_into_values_paren(
     client.run_statement("create table t1 (a int, b int, c int);")
     autocompleter.refresh()
     assert [] == get_text_list(
-        autocompleter.get_suggestions("insert into t1 values ( ", len("insert into t1 values ( ")),
+        autocompleter.get_suggestions(
+            "insert into t1 values ( ", len("insert into t1 values ( ")
+        ),
     )
     client.run_statement("drop database d1;")

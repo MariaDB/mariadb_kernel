@@ -241,9 +241,13 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
         elif p.token_first().value.lower() == "show":
             return [{"type": "show"}]
         first_token = p.token_first()
-        if first_token and first_token.ttype == DML and first_token.value.lower() == "insert":
+        if (
+            first_token
+            and first_token.ttype == DML
+            and first_token.value.lower() == "insert"
+        ):
             # for statement like 「insert into table_name values ( 」 would suggest nothing
-            return [] 
+            return []
         # We're probably in a function argument list
         return [{"type": "column", "tables": extract_tables(full_text)}]
     elif token_v in ("set", "order by", "distinct"):
