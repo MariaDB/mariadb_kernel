@@ -1301,6 +1301,12 @@ class SQLAnalyze(Completer):
 
             elif suggestion["type"] == "table":
                 tables = self.populate_schema_objects(suggestion["schema"], "tables")
+                if len(tables) == 0:
+                    # find in database_tables
+                    db_name = suggestion["schema"].rstrip(".")
+                    tables.extend(
+                        [t[1] for t in self.database_tables if t[0] == db_name]
+                    )
                 tables = self.find_matches(word_before_cursor, tables)
                 self.extend_with_type(completions, tables, suggestion["type"])
 

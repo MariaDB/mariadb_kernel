@@ -93,7 +93,6 @@ def suggest_type(full_text, text_before_cursor):
     if len(full_text_parsed_result) > 0:
         parsed_back = full_text_parsed_result[0]
         if len(parsed_back.tokens) > 0:
-            parsed_back = full_text_parsed_result[0]
             table = ""
             if len(parsed_back.tokens) > 1:
                 table = str(parsed_back.tokens[1])
@@ -101,7 +100,14 @@ def suggest_type(full_text, text_before_cursor):
             if (
                 token_after_text_cursor.ttype == Punctuation
                 and token_after_text_cursor.value == "."
-                and str(last_token) in suggestion_table_tuple
+                and str(last_token).lower() in suggestion_table_tuple
+            ):
+                # need suggest database type
+                return [{"type": "database", "table": table}]
+            elif (
+                isinstance(token_after_text_cursor, Identifier)
+                and token_after_text_cursor.value[-1] == "."
+                and str(last_token).lower() in suggestion_table_tuple
             ):
                 # need suggest database type
                 return [{"type": "database", "table": table}]

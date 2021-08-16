@@ -10,6 +10,7 @@ from unittest.mock import Mock
 from ..autocompleter import Autocompleter
 
 import unittest
+import pytest
 
 
 def get_text_list(completions: List[Completion]):
@@ -535,7 +536,7 @@ def test_mariadb_autocompleter_column_suggest_for_system_table_2(
     )
 
 
-def test_mariadb_autocomple_actively_fetch_system_table_columns(
+def test_mariadb_autocompleter_actively_fetch_system_table_columns(
     mariadb_server: Type[MariaDBServer],
 ):
     mocklog = Mock()
@@ -556,3 +557,37 @@ def test_mariadb_autocomple_actively_fetch_system_table_columns(
         ),
         "column",
     )
+
+
+@pytest.mark.parametrize(
+    "code, code_pos, expected",
+    [
+        ("select * from d2.;", len("select * from d2."), ["tabl"]),
+        ("select * from d2.tab", len("select * from d2.tab"), ["tabl"]),
+    ],
+)
+def test_mariadb_autocompleter_suggest_the_table_not_under_current_selected_database(
+    mariadb_server: Type[MariaDBServer], code: str, code_pos: int, expected: List[str]
+):
+    mocklog = Mock()
+    cfg = ClientConfig(mocklog, name="nonexistentcfg.json")  # default config
+
+    mariadb_server(mocklog, cfg)
+
+    manager = MariadbClientManagager(mocklog, cfg)
+    client = manager.client_for_code_block
+    manager.start()
+    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
+    client.run_statement("create database d1;")
+    client.run_statement("create database d2;")
+    client.run_statement("use d1;")
+    client.run_statement("create table tabl(u int);")
+    client.run_statement("use d2;")
+    client.run_statement("create table tabl(u int);")
+    client.run_statement("use d1;")
+    autocompleter.refresh()
+    assert expected == get_text_list(
+        autocompleter.get_suggestions(code, code_pos),
+    )
+    client.run_statement("drop database d1;")
+    client.run_statement("drop database d2;")
