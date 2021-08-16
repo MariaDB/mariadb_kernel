@@ -664,3 +664,24 @@ def test_mariadb_autocompleter_suggest_keyword_after_user_column(
         autocompleter.get_suggestions("select user fro", len("select user fro")),
     )
     client.run_statement("drop database d1;")
+
+def test_mariadb_autocompleter_suggest_nothing_after_insert_into_values_paren(
+    mariadb_server: Type[MariaDBServer],
+):
+    mocklog = Mock()
+    cfg = ClientConfig(mocklog, name="nonexistentcfg.json")  # default config
+
+    mariadb_server(mocklog, cfg)
+
+    manager = MariadbClientManagager(mocklog, cfg)
+    client = manager.client_for_code_block
+    manager.start()
+    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
+    client.run_statement("create database d1;")
+    client.run_statement("use d1;")
+    client.run_statement("create table t1 (a int, b int, c int);")
+    autocompleter.refresh()
+    assert [] == get_text_list(
+        autocompleter.get_suggestions("insert into t1 values ( ", len("insert into t1 values ( ")),
+    )
+    client.run_statement("drop database d1;")

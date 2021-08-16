@@ -1,6 +1,6 @@
 import sqlparse
 from sqlparse.sql import Comparison, Identifier, IdentifierList, Token, Where
-from sqlparse.tokens import Punctuation
+from sqlparse.tokens import DML, Punctuation
 from mycli.packages.parseutils import last_word, extract_tables, find_prev_keyword
 from mycli.packages.special import parse_special_command
 
@@ -240,7 +240,10 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
                 return [{"type": "keyword"}]
         elif p.token_first().value.lower() == "show":
             return [{"type": "show"}]
-
+        first_token = p.token_first()
+        if first_token and first_token.ttype == DML and first_token.value.lower() == "insert":
+            # for statement like 「insert into table_name values ( 」 would suggest nothing
+            return [] 
         # We're probably in a function argument list
         return [{"type": "column", "tables": extract_tables(full_text)}]
     elif token_v in ("set", "order by", "distinct"):
