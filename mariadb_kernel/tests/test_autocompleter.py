@@ -317,6 +317,7 @@ def test_mariadb_autocompleter_database_before_table_name_under_partial_database
     client.run_statement("drop database da1;")
     client.run_statement("drop database db2;")
 
+
 def test_mariadb_autocompleter_database_with_select_statement(
     mariadb_server: Type[MariaDBServer],
 ):
@@ -336,7 +337,9 @@ def test_mariadb_autocompleter_database_with_select_statement(
     unittest.TestCase().assertListEqual(
         ["mysql"],
         get_text_list(
-            autocompleter.get_suggestions("select * from mysq", len("select * from mysq"))
+            autocompleter.get_suggestions(
+                "select * from mysq", len("select * from mysq")
+            )
         ),
     )
     client.run_statement("drop database d1;")
@@ -365,6 +368,7 @@ def test_mariadb_autocompleter_database_with_describe_statement(
         ),
     )
     client.run_statement("drop database d1;")
+
 
 def test_mariadb_autocompleter_variables_suggestion_with_empty_text(
     mariadb_server: Type[MariaDBServer],
