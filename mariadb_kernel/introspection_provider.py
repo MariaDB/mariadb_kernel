@@ -86,70 +86,8 @@ class IntrospectionProvider:
                 suggest_dict[type] = suggest
         print(f"suggest_dict: {suggest_dict}")
         # Need to check it is being suggested and it exists or not
-        # priority: column -> table -> database -> function -> keyword
-        if suggest_dict.get("column"):
-            # check this is function or not
-            parsed_after_cursor = sqlparse.parse(document.text[end_position:])
-            if len(parsed_after_cursor) > 0:
-                parsed_tokens = parsed_after_cursor[0].tokens
-                print(f"parsed_tokens : {parsed_tokens}")
-                if len(parsed_tokens) > 0:
-                    if suggest_dict.get("function") and isinstance(
-                        parsed_tokens[0], Parenthesis
-                    ):
-                        if word in [
-                            function.lower() for function in completer.functions
-                        ]:
-                            return {"word": word, "type": "function"}
-
-            # if suggest_dict's column has tables not empty, use that as table
-            tables = suggest_dict["column"].get("tables")
-            curDB: Union[Dict, None] = completer.dbmetadata["tables"].get(
-                completer.dbname
-            )
-            if len(tables) > 0:
-                if tables[0][1] != None and curDB:
-                    if curDB.get(tables[0][1]) and (
-                        word in curDB[tables[0][1]]
-                        or f"`{word}`" in curDB[tables[0][1]]
-                    ):
-                        return {
-                            "word": word,
-                            "type": "column",
-                            "database": completer.dbname,
-                            "table": tables[0][1],
-                        }
-            # search all table for finding which table contains this column
-            if curDB:
-                for key in curDB.keys():
-                    if word in curDB[key] or f"`{word}`" in curDB[key]:
-                        # maybe this is wrong
-                        return {
-                            "word": word,
-                            "type": "column",
-                            "database": completer.dbname,
-                            "table": key,
-                        }
-            # actively fetch system table's column
-            if len(tables) > 0:
-                database = tables[0][0]
-                table = tables[0][1]
-                if database and table:
-                    database_table_dict = completer.dbmetadata["tables"].get(database)
-                    if database_table_dict is None:
-                        # fetch the table's column
-                        column_list = (
-                            aucompleter.executor.get_specific_table_columns_list(
-                                table, database
-                            )
-                        )
-                        if word.lower() in [column.lower() for column in column_list]:
-                            return {
-                                "word": word,
-                                "type": "column",
-                                "database": database,
-                                "table": table,
-                            }
+        # priority: column_hint -> column -> table -> database -> function -> keyword
+        if suggest_dict.get("column_hint"):
             # for statement like 「insert into t1 (a int, b int, c int) VALUES (」 would provide column hint
             parsed_before_cursor = sqlparse.parse(document.text[:end_position])
             if len(parsed_before_cursor) > 0:
@@ -241,6 +179,69 @@ class IntrospectionProvider:
                         for t in token.tokens:
                             if t.ttype == Punctuation and str(t) == ",":
                                 value_index += 1
+        if suggest_dict.get("column"):
+            # check this is function or not
+            parsed_after_cursor = sqlparse.parse(document.text[end_position:])
+            if len(parsed_after_cursor) > 0:
+                parsed_tokens = parsed_after_cursor[0].tokens
+                print(f"parsed_tokens : {parsed_tokens}")
+                if len(parsed_tokens) > 0:
+                    if suggest_dict.get("function") and isinstance(
+                        parsed_tokens[0], Parenthesis
+                    ):
+                        if word in [
+                            function.lower() for function in completer.functions
+                        ]:
+                            return {"word": word, "type": "function"}
+
+            # if suggest_dict's column has tables not empty, use that as table
+            tables = suggest_dict["column"].get("tables")
+            curDB: Union[Dict, None] = completer.dbmetadata["tables"].get(
+                completer.dbname
+            )
+            if len(tables) > 0:
+                if tables[0][1] != None and curDB:
+                    if curDB.get(tables[0][1]) and (
+                        word in curDB[tables[0][1]]
+                        or f"`{word}`" in curDB[tables[0][1]]
+                    ):
+                        return {
+                            "word": word,
+                            "type": "column",
+                            "database": completer.dbname,
+                            "table": tables[0][1],
+                        }
+            # search all table for finding which table contains this column
+            if curDB:
+                for key in curDB.keys():
+                    if word in curDB[key] or f"`{word}`" in curDB[key]:
+                        # maybe this is wrong
+                        return {
+                            "word": word,
+                            "type": "column",
+                            "database": completer.dbname,
+                            "table": key,
+                        }
+            # actively fetch system table's column
+            if len(tables) > 0:
+                database = tables[0][0]
+                table = tables[0][1]
+                if database and table:
+                    database_table_dict = completer.dbmetadata["tables"].get(database)
+                    if database_table_dict is None:
+                        # fetch the table's column
+                        column_list = (
+                            aucompleter.executor.get_specific_table_columns_list(
+                                table, database
+                            )
+                        )
+                        if word.lower() in [column.lower() for column in column_list]:
+                            return {
+                                "word": word,
+                                "type": "column",
+                                "database": database,
+                                "table": table,
+                            }
         if suggest_dict.get("table"):
             # If suggest_dict's table has schema field. Regard that as the database, which table belongs
             if suggest_dict["table"].get("schema"):
