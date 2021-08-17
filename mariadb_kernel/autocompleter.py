@@ -102,8 +102,6 @@ class Autocompleter(object):
             self.autocompleter_mariadb_client.run_statement(f"use {code_block_db_name}")
             self.executor.dbname = self.code_blcok_executor.get_db_name()
         self.refresher.refresh(sync)
-        self.log.info(f"self.completer.dbname : {self.completer.dbname}")
-        self.log.info(f"self.completer.dbmetadata : {self.completer.dbmetadata}")
 
     def get_suggestions(self, code: str, cursor_pos: int):
         # self.refresh()

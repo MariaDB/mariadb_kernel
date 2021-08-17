@@ -2,8 +2,8 @@
 # Copyright (c) MariaDB Foundation.
 # Distributed under the terms of the Modified BSD License.
 
+from mariadb_kernel.sql_fetch import SqlFetch
 from ipykernel.kernelbase import Kernel
-from prompt_toolkit.document import Document
 
 from ._version import version as __version__
 from mariadb_kernel.client_config import ClientConfig
@@ -13,13 +13,10 @@ from mariadb_kernel.mariadb_client import (
 )
 from mariadb_kernel.code_parser import CodeParser
 from mariadb_kernel.mariadb_server import MariaDBServer
-from mariadb_kernel.maria_magics.maria_magic import MariaMagic
 from mariadb_kernel.autocompleter import Autocompleter
-from mariadb_kernel.introspection_provider import IntrospectionProvider
+from mariadb_kernel.introspector import Introspector
 
 import logging
-import pexpect
-import re
 import pandas
 from bs4 import BeautifulSoup
 import os
@@ -169,22 +166,6 @@ class MariaDBKernel(Kernel):
             self.autocompleter.refresh(False)
         return rv
 
-    def num_connected_clients(self):
-        sql_query = "show status like 'Threads_connected';"
-        # If there is any errors we raise
-        # (not much we can do if there is a error)
-        result_html = self.mariadb_client.run_statement(code=sql_query)
-        if self.mariadb_client.iserror():
-            raise Exception(f"Client returned an error : {result_html}")
-        try:
-            df = pandas.read_html(result_html)
-            num_clients = int(df[0]["Value"][0])
-        except Exception:
-            self.log.error(f"Pandas failed to parse html : {result_html}")
-            raise
-
-        return num_clients
-
     def kill_server(self):
         if self.mariadb_server and self.mariadb_server.is_up():
             self.log.info(f"Stopping (own) MariaDB server")
@@ -208,7 +189,8 @@ class MariaDBKernel(Kernel):
         num_clients = None
         if self.client_config.start_server():
             try:
-                num_clients = self.num_connected_clients()
+                sql_fetch = SqlFetch(self.mariadb_client, self.log)
+                num_clients = sql_fetch.num_connected_clients()
             except Exception as e:
                 self.log.error(
                     f"Failed querying server (of number of clients connected), error: {e}"
@@ -230,7 +212,6 @@ class MariaDBKernel(Kernel):
             )
         completion_list = self.autocompleter.get_suggestions(code, cursor_pos)
         match_text_list = [completion.text for completion in completion_list]
-        self.log.info(f"match_text_list: {match_text_list}")
         offset = 0
         if len(completion_list) > 0:
             offset = completion_list[
@@ -256,9 +237,9 @@ class MariaDBKernel(Kernel):
         }
 
     def do_inspect(self, code, cursor_pos, detail_level):
-        introspection_provider = IntrospectionProvider()
-        result_html = introspection_provider.get_introspection_explain_html(
-            Document(code, int(cursor_pos)), self.autocompleter
+        introspection_provider = Introspector()
+        result_html = introspection_provider.inspect(
+            code, int(cursor_pos), self.autocompleter
         )
         if result_html is None or result_html == "":
             return {"status": "ok", "data": {}, "metadata": {}, "found": False}

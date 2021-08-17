@@ -4,14 +4,10 @@ from bs4.element import Tag
 from sqlparse.sql import Function, Identifier, IdentifierList, Parenthesis, Values
 from sqlparse.tokens import Keyword, Punctuation, _TokenType
 from mariadb_kernel.autocompleter import Autocompleter
-from mariadb_kernel.sql_analyze import SQLAnalyze
 import re
-from prompt_toolkit.document import Document
 from mariadb_kernel.completion_engine import suggest_type, last_word
 import sqlparse
 from bs4 import BeautifulSoup
-import json
-from pathlib import Path
 
 
 def first_word(text):
@@ -67,18 +63,20 @@ def convert_help_text_to_beautiful_html(text):
     return result
 
 
-class IntrospectionProvider:
-    def get_instropection(self, document: Document, aucompleter: Autocompleter):
-        completer = aucompleter.completer
+class Introspector:
+    def get_instropection(
+        self, code: str, cursor_pos: int, autocompleter: Autocompleter
+    ):
+        completer = autocompleter.completer
         # return word's type and word's text
-        last_partial_token_right = first_word(document.text_after_cursor)
-        last_partial_token_left = last_word(document.text_before_cursor)
+        last_partial_token_right = first_word(code[cursor_pos:])
+        last_partial_token_left = last_word(code[:cursor_pos:])
         word = last_partial_token_left + last_partial_token_right
 
         # get word start's position and end's position
-        start_position = document.cursor_position - len(last_partial_token_left)
-        end_position = document.cursor_position + len(last_partial_token_right)
-        suggestion = suggest_type(document.text, document.text[:start_position])
+        start_position = cursor_pos - len(last_partial_token_left)
+        end_position = cursor_pos + len(last_partial_token_right)
+        suggestion = suggest_type(code, code[:start_position])
         suggest_dict = {}
         for suggest in suggestion:
             type = suggest.get("type")
@@ -89,7 +87,7 @@ class IntrospectionProvider:
         # priority: column_hint -> column -> table -> database -> function -> keyword
         if suggest_dict.get("column_hint"):
             # for statement like 「insert into t1 (a int, b int, c int) VALUES (」 would provide column hint
-            parsed_before_cursor = sqlparse.parse(document.text[:end_position])
+            parsed_before_cursor = sqlparse.parse(code[:end_position])
             if len(parsed_before_cursor) > 0:
                 tokens: List[_TokenType] = parsed_before_cursor[0].tokens
                 last_match_token_text: str = ""
@@ -181,7 +179,7 @@ class IntrospectionProvider:
                                 value_index += 1
         if suggest_dict.get("column"):
             # check this is function or not
-            parsed_after_cursor = sqlparse.parse(document.text[end_position:])
+            parsed_after_cursor = sqlparse.parse(code[end_position:])
             if len(parsed_after_cursor) > 0:
                 parsed_tokens = parsed_after_cursor[0].tokens
                 print(f"parsed_tokens : {parsed_tokens}")
@@ -231,7 +229,7 @@ class IntrospectionProvider:
                     if database_table_dict is None:
                         # fetch the table's column
                         column_list = (
-                            aucompleter.executor.get_specific_table_columns_list(
+                            autocompleter.executor.get_specific_table_columns_list(
                                 table, database
                             )
                         )
@@ -278,10 +276,10 @@ class IntrospectionProvider:
     def render_doc_header(self, name: str):
         return f"<h2 style='color: #0045ad'>{name}</h2>"
 
-    def get_introspection_explain_html(
-        self, document: Document, autocompleter: Autocompleter
+    def inspect(
+        self, code: str, cursor_pos: int, autocompleter: Autocompleter
     ) -> Union[str, None]:
-        result = self.get_instropection(document, autocompleter)
+        result = self.get_instropection(code, cursor_pos, autocompleter)
         if result:
             word_type = result.get("type")
             word = result.get("word")
@@ -370,21 +368,3 @@ class IntrospectionProvider:
                             if item.name == hint:
                                 hint = item.name + " " + item.type
                 return f"{hint}"
-
-
-# example
-# introspection_provider = IntrospectionProvider()
-# completer = SQLAnalyze(Mock())
-# result = introspection_provider.get_instropection(
-#     Document("select col1 from tbl1", len("select col")), completer
-# )
-# print(result)
-# introspection_provider.get_instropection(
-#     Document("select col1 from ", len("select col")), completer
-# )
-# introspection_provider.get_instropection(
-#     Document("insert into db1.tbl1 ", len("insert into db1.t")), completer
-# )
-# introspection_provider.get_instropection(
-#     Document("insert into db2.tbl1 ", len("insert into db2.t")), completer
-# )

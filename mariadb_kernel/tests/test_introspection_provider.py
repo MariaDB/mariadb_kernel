@@ -1,11 +1,10 @@
 from typing import Type
 
-from prompt_toolkit.document import Document
 from ..kernel import MariadbClientManagager
 
 from ..mariadb_server import MariaDBServer
 from ..client_config import ClientConfig
-from ..introspection_provider import IntrospectionProvider
+from ..introspector import Introspector
 from ..autocompleter import Autocompleter
 
 from unittest.mock import Mock
@@ -21,12 +20,12 @@ def test_introspection_provider_introspect_keyword(mariadb_server: Type[MariaDBS
     manager = MariadbClientManagager(mocklog, cfg)
     client = manager.client_for_code_block
     manager.start()
-    provider = IntrospectionProvider()
+    introspector = Introspector()
     autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
-    result = provider.get_instropection(
-        Document("select col1 from b;", len("sele")), autocompleter
+    result = introspector.get_instropection(
+        "select col1 from b;", len("sele"), autocompleter
     )
 
     assert {"type": "keyword", "word": "select"} == result
@@ -43,12 +42,12 @@ def test_introspection_provider_introspect_function(
     manager = MariadbClientManagager(mocklog, cfg)
     client = manager.client_for_code_block
     manager.start()
-    provider = IntrospectionProvider()
+    introspector = Introspector()
     autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
-    result = provider.get_instropection(
-        Document("select min(col1) from b;", len("select mi")), autocompleter
+    result = introspector.get_instropection(
+        "select min(col1) from b;", len("select mi"), autocompleter
     )
 
     assert {"type": "function", "word": "min"} == result
@@ -66,13 +65,11 @@ def test_introspection_provider_introspect_database(
     client = manager.client_for_code_block
     manager.start()
     client.run_statement("create database mydb;")
-    provider = IntrospectionProvider()
+    introspector = Introspector()
     autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
-    result = provider.get_instropection(
-        Document("use mydb;", len("use my")), autocompleter
-    )
+    result = introspector.get_instropection("use mydb;", len("use my"), autocompleter)
 
     assert {"type": "database", "word": "mydb"} == result
     client.run_statement("drop database mydb;")
@@ -92,12 +89,13 @@ def test_introspection_provider_introspect_table(
     client.run_statement("create database mydb;")
     client.run_statement("use mydb;")
     client.run_statement("create table tbl1 (col1 int);")
-    provider = IntrospectionProvider()
+    introspector = Introspector()
     autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
-    result = provider.get_instropection(
-        Document("select col1 from tbl1", len("select col1 from tbl")),
+    result = introspector.get_instropection(
+        "select col1 from tbl1",
+        len("select col1 from tbl"),
         autocompleter,
     )
 
@@ -121,12 +119,13 @@ def test_introspection_provider_introspect_table_that_is_not_belong_current_use_
     client.run_statement("use db2;")
     client.run_statement("create table tbl1 (col1 int);")
     client.run_statement("use db1;")
-    provider = IntrospectionProvider()
+    introspector = Introspector()
     autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
-    result = provider.get_instropection(
-        Document("insert into db2.tbl1 ", len("insert into db2.t")),
+    result = introspector.get_instropection(
+        "insert into db2.tbl1 ",
+        len("insert into db2.t"),
         autocompleter,
     )
 
@@ -150,12 +149,12 @@ def test_introspection_provider_introspect_column(
     client.run_statement("use db1;")
     client.run_statement("create table tbl1 (col1 int);")
 
-    provider = IntrospectionProvider()
+    introspector = Introspector()
     autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
-    result = provider.get_instropection(
-        Document("select col1 from tbl1", len("select col")), autocompleter
+    result = introspector.get_instropection(
+        "select col1 from tbl1", len("select col"), autocompleter
     )
 
     assert {
@@ -182,12 +181,12 @@ def test_introspection_provider_introspect_column_with_no_table_info(
     client.run_statement("use db1;")
     client.run_statement("create table tbl1 (col1 int);")
 
-    provider = IntrospectionProvider()
+    introspector = Introspector()
     autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
-    result = provider.get_instropection(
-        Document("select col1 from ", len("select col")), autocompleter
+    result = introspector.get_instropection(
+        "select col1 from ", len("select col"), autocompleter
     )
 
     assert {
@@ -214,12 +213,12 @@ def test_introspection_provider_introspect_column_with_column_name_is_same_with_
     client.run_statement("use db1;")
     client.run_statement("create table tbl1 (min int);")
 
-    provider = IntrospectionProvider()
+    introspector = Introspector()
     autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
-    result = provider.get_instropection(
-        Document("select min from tbl1;", len("select mi")), autocompleter
+    result = introspector.get_instropection(
+        "select min from tbl1;", len("select mi"), autocompleter
     )
 
     assert {
@@ -246,12 +245,12 @@ def test_introspection_provider_introspect_column_with_column_name_is_same_with_
     client.run_statement("use db1;")
     client.run_statement("create table tbl1 (type int);")
 
-    provider = IntrospectionProvider()
+    introspector = Introspector()
     autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
-    result = provider.get_instropection(
-        Document("select type from tbl1;", len("select ty")), autocompleter
+    result = introspector.get_instropection(
+        "select type from tbl1;", len("select ty"), autocompleter
     )
 
     assert {
@@ -278,12 +277,13 @@ def test_introspection_provider_introspect_function_with_function_name_is_same_w
     client.run_statement("use db1;")
     client.run_statement("create table tbl1 (min int);")
 
-    provider = IntrospectionProvider()
+    introspector = Introspector()
     autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
-    result = provider.get_instropection(
-        Document("select min(min) from tbl1;", len("select mi")),
+    result = introspector.get_instropection(
+        "select min(min) from tbl1;",
+        len("select mi"),
         autocompleter,
     )
 
@@ -308,12 +308,12 @@ def test_introspection_provider_introspect_column_with_table_name_is_same_with_f
     client.run_statement("create database db1;")
     client.run_statement("use db1;")
     client.run_statement("create table min (col1 int);")
-    provider = IntrospectionProvider()
+    introspector = Introspector()
     autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
-    result = provider.get_instropection(
-        Document("select * from min;", len("select * from m")), autocompleter
+    result = introspector.get_instropection(
+        "select * from min;", len("select * from m"), autocompleter
     )
 
     assert {
@@ -339,12 +339,13 @@ def test_introspection_provider_introspect_column_with_table_name_is_same_with_k
     client.run_statement("use db1;")
     client.run_statement("create table type (col1 int);")
 
-    provider = IntrospectionProvider()
+    introspector = Introspector()
     autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
-    result = provider.get_instropection(
-        Document("select * from type;", len("select * from ty")),
+    result = introspector.get_instropection(
+        "select * from type;",
+        len("select * from ty"),
         autocompleter,
     )
 
@@ -372,12 +373,13 @@ def test_introspection_provider_introspect_column_with_column_name_is_same_with_
     client.run_statement("create table col_tabl (col1 int);")
     client.run_statement("create table tabl2 (col_tabl int);")
 
-    provider = IntrospectionProvider()
+    introspector = Introspector()
     autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
-    result = provider.get_instropection(
-        Document("select tabl2.col_tabl from tabl2;", len("select tabl2.col_")),
+    result = introspector.get_instropection(
+        "select tabl2.col_tabl from tabl2;",
+        len("select tabl2.col_"),
         autocompleter,
     )
 
@@ -405,15 +407,13 @@ def test_introspection_provider_introspect_insert_into_after_VALUES_would_sugges
     client.run_statement("use db1;")
     client.run_statement("create table t1 (a int, b int, c int);")
 
-    provider = IntrospectionProvider()
+    introspector = Introspector()
     autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
-    result = provider.get_instropection(
-        Document(
-            "insert into t1 (a, b, c) VALUES (",
-            len("insert into t1 (a, b, c) VALUES ("),
-        ),
+    result = introspector.get_instropection(
+        "insert into t1 (a, b, c) VALUES (",
+        len("insert into t1 (a, b, c) VALUES ("),
         autocompleter,
     )
 
@@ -448,12 +448,13 @@ def test_introspection_provider_introspect_insert_into_after_VALUES_would_sugges
     client.run_statement("use db1;")
     client.run_statement("create table t1 (a int, b int, c int);")
 
-    provider = IntrospectionProvider()
+    introspector = Introspector()
     autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
-    result = provider.get_instropection(
-        Document(input, len(input)),
+    result = introspector.get_instropection(
+        input,
+        len(input),
         autocompleter,
     )
 
@@ -481,14 +482,13 @@ def test_introspection_provider_introspect_insert_into_after_VALUES_would_sugges
     client.run_statement("use db1;")
     client.run_statement("create table t1 (a int);")
 
-    provider = IntrospectionProvider()
+    introspector = Introspector()
     autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
-    result = provider.get_instropection(
-        Document(
-            "insert into t1 (a) VALUES (1,2", len("insert into t1 (a) VALUES (1,2")
-        ),
+    result = introspector.get_instropection(
+        "insert into t1 (a) VALUES (1,2",
+        len("insert into t1 (a) VALUES (1,2"),
         autocompleter,
     )
 
@@ -514,12 +514,13 @@ def test_introspection_provider_introspect_insert_into_after_VALUES_would_sugges
     client.run_statement("use db1;")
     client.run_statement("create table t1 (a int);")
 
-    provider = IntrospectionProvider()
+    introspector = Introspector()
     autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
-    result = provider.get_instropection(
-        Document("insert into t1 VALUES (1,2", len("insert into t1 VALUES (1,2")),
+    result = introspector.get_instropection(
+        "insert into t1 VALUES (1,2",
+        len("insert into t1 VALUES (1,2"),
         autocompleter,
     )
 
@@ -547,12 +548,13 @@ def test_introspection_provider_introspect_insert_into_after_VALUES_would_sugges
     client.run_statement("use db1;")
     client.run_statement("create table t1 (c int, b int, a int);")
 
-    provider = IntrospectionProvider()
+    introspector = Introspector()
     autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
-    result = provider.get_instropection(
-        Document("insert into t1 VALUES (1,2,", len("insert into t1 VALUES (1,2,")),
+    result = introspector.get_instropection(
+        "insert into t1 VALUES (1,2,",
+        len("insert into t1 VALUES (1,2,"),
         autocompleter,
     )
 
@@ -580,15 +582,13 @@ def test_introspection_provider_introspect_insert_into_after_VALUES_would_sugges
     client.run_statement("use db1;")
     client.run_statement("create table t1 (c int, b int, a int);")
 
-    provider = IntrospectionProvider()
+    introspector = Introspector()
     autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
-    result = provider.get_instropection(
-        Document(
-            "insert into t1 VALUES (1,2), (3,4), (5,",
-            len("insert into t1 VALUES (1,2), (3,4), (5,"),
-        ),
+    result = introspector.get_instropection(
+        "insert into t1 VALUES (1,2), (3,4), (5,",
+        len("insert into t1 VALUES (1,2), (3,4), (5,"),
         autocompleter,
     )
 
@@ -615,15 +615,13 @@ def test_introspection_provider_introspect_column_after_user_column(
     client.run_statement("create database db1;")
     client.run_statement("use db1;")
 
-    provider = IntrospectionProvider()
+    introspector = Introspector()
     autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
-    result = provider.get_instropection(
-        Document(
-            "select user, password from mysql.user;",
-            len("select user, passwo"),
-        ),
+    result = introspector.get_instropection(
+        "select user, password from mysql.user;",
+        len("select user, passwo"),
         autocompleter,
     )
 
@@ -650,15 +648,13 @@ def test_introspection_provider_introspect_user_column_in_system_table(
     client.run_statement("create database db1;")
     client.run_statement("use db1;")
 
-    provider = IntrospectionProvider()
+    introspector = Introspector()
     autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
-    result = provider.get_instropection(
-        Document(
-            "select user from mysql.user;",
-            len("select use"),
-        ),
+    result = introspector.get_instropection(
+        "select user from mysql.user;",
+        len("select use"),
         autocompleter,
     )
 
@@ -686,15 +682,13 @@ def test_introspection_provider_introspect_user_column_in_user_create_table(
     client.run_statement("use db1;")
     client.run_statement("create table t1(user varchar(20));")
 
-    provider = IntrospectionProvider()
+    introspector = Introspector()
     autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
     autocompleter.refresh()
 
-    result = provider.get_instropection(
-        Document(
-            "select user from t1;",
-            len("select use"),
-        ),
+    result = introspector.get_instropection(
+        "select user from t1;",
+        len("select use"),
         autocompleter,
     )
 

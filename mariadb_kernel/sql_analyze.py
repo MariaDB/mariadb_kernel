@@ -1402,7 +1402,6 @@ class SQLAnalyze(Completer):
                 # scope can be both, global, session
                 # use set because global_variable would overlap with session_variable
                 variable_list = set()
-                self.log.info(f"suggestion: {suggestion}")
                 if suggestion["scope"] == "global":
                     variable_list = {*variable_list, *self.global_variable}
                 elif suggestion["scope"] == "session":
@@ -1419,7 +1418,6 @@ class SQLAnalyze(Completer):
                     .replace("@@session.", "")
                     .replace("@@", "")
                 )
-                self.log.info(f"word: {word}")
                 variables = self.find_matches(word, list(variable_list))
                 self.extend_with_type(completions, variables, suggestion["type"])
 
