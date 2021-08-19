@@ -1,7 +1,6 @@
 FROM jupyter/scipy-notebook:lab-3.1.4
 
-RUN pip install --no-cache --upgrade pip && \
-    pip install --no-cache notebook
+USER root
 
 # This will make apt-get install without question
 ARG DEBIAN_FRONTEND=noninteractive
@@ -40,8 +39,10 @@ RUN adduser --disabled-password \
 
 # Make sure the contents of our repo are in ${HOME}
 COPY . ${HOME}
-USER root
 RUN chown -R ${NB_UID} ${HOME}
 
 WORKDIR ${HOME}
 USER ${USER}
+
+RUN pip install --no-cache --upgrade pip && \
+    pip install --no-cache notebook
