@@ -1,7 +1,0 @@
-set -ex
-
-mkdir -p /home/jovyan/.jupyter
-cp binder/mariadb_config.json /home/jovyan/.jupyter/
-
-python setup.py --version
-python -m mariadb_kernel.install
