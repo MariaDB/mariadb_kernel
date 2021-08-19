@@ -102,9 +102,9 @@ class Introspector:
                         and token.ttype == Keyword
                         and str(token).lower() == "values"
                     ) or isinstance(token, Values):
-                        last_match_token_text = str(token).lower()
+                        last_match_token_text = "values"
                     elif (
-                        last_match_token_text.startswith("values")
+                        last_match_token_text == "values"
                         and token.ttype == Keyword
                         and str(token).lower() == "into"
                     ):

@@ -11,7 +11,7 @@ from unittest.mock import Mock
 import pytest
 
 
-def test_introspection_provider_introspect_keyword(mariadb_server: Type[MariaDBServer]):
+def test_introspector_introspect_keyword(mariadb_server: Type[MariaDBServer]):
     mocklog = Mock()
     cfg = ClientConfig(mocklog, name="nonexistentcfg.json")  # default config
 
@@ -31,7 +31,7 @@ def test_introspection_provider_introspect_keyword(mariadb_server: Type[MariaDBS
     assert {"type": "keyword", "word": "select"} == result
 
 
-def test_introspection_provider_introspect_function(
+def test_introspector_introspect_function(
     mariadb_server: Type[MariaDBServer],
 ):
     mocklog = Mock()
@@ -53,7 +53,7 @@ def test_introspection_provider_introspect_function(
     assert {"type": "function", "word": "min"} == result
 
 
-def test_introspection_provider_introspect_database(
+def test_introspector_introspect_database(
     mariadb_server: Type[MariaDBServer],
 ):
     mocklog = Mock()
@@ -75,7 +75,7 @@ def test_introspection_provider_introspect_database(
     client.run_statement("drop database mydb;")
 
 
-def test_introspection_provider_introspect_table(
+def test_introspector_introspect_table(
     mariadb_server: Type[MariaDBServer],
 ):
     mocklog = Mock()
@@ -103,7 +103,7 @@ def test_introspection_provider_introspect_table(
     client.run_statement("drop database mydb;")
 
 
-def test_introspection_provider_introspect_table_that_is_not_belong_current_use_db(
+def test_introspector_introspect_table_that_is_not_belong_current_use_db(
     mariadb_server: Type[MariaDBServer],
 ):
     mocklog = Mock()
@@ -134,7 +134,7 @@ def test_introspection_provider_introspect_table_that_is_not_belong_current_use_
     client.run_statement("drop database db2;")
 
 
-def test_introspection_provider_introspect_column(
+def test_introspector_introspect_column(
     mariadb_server: Type[MariaDBServer],
 ):
     mocklog = Mock()
@@ -166,7 +166,7 @@ def test_introspection_provider_introspect_column(
     client.run_statement("drop database db1;")
 
 
-def test_introspection_provider_introspect_column_with_no_table_info(
+def test_introspector_introspect_column_with_no_table_info(
     mariadb_server: Type[MariaDBServer],
 ):
     mocklog = Mock()
@@ -198,7 +198,7 @@ def test_introspection_provider_introspect_column_with_no_table_info(
     client.run_statement("drop database db1;")
 
 
-def test_introspection_provider_introspect_column_with_column_name_is_same_with_function(
+def test_introspector_introspect_column_with_column_name_is_same_with_function(
     mariadb_server: Type[MariaDBServer],
 ):
     mocklog = Mock()
@@ -230,7 +230,7 @@ def test_introspection_provider_introspect_column_with_column_name_is_same_with_
     client.run_statement("drop database db1;")
 
 
-def test_introspection_provider_introspect_column_with_column_name_is_same_with_keyword(
+def test_introspector_introspect_column_with_column_name_is_same_with_keyword(
     mariadb_server: Type[MariaDBServer],
 ):
     mocklog = Mock()
@@ -262,7 +262,7 @@ def test_introspection_provider_introspect_column_with_column_name_is_same_with_
     client.run_statement("drop database db1;")
 
 
-def test_introspection_provider_introspect_function_with_function_name_is_same_with_column(
+def test_introspector_introspect_function_with_function_name_is_same_with_column(
     mariadb_server: Type[MariaDBServer],
 ):
     mocklog = Mock()
@@ -294,7 +294,7 @@ def test_introspection_provider_introspect_function_with_function_name_is_same_w
     client.run_statement("drop database db1;")
 
 
-def test_introspection_provider_introspect_column_with_table_name_is_same_with_function(
+def test_introspector_introspect_column_with_table_name_is_same_with_function(
     mariadb_server: Type[MariaDBServer],
 ):
     mocklog = Mock()
@@ -324,7 +324,7 @@ def test_introspection_provider_introspect_column_with_table_name_is_same_with_f
     client.run_statement("drop database db1;")
 
 
-def test_introspection_provider_introspect_column_with_table_name_is_same_with_keyword(
+def test_introspector_introspect_column_with_table_name_is_same_with_keyword(
     mariadb_server: Type[MariaDBServer],
 ):
     mocklog = Mock()
@@ -357,7 +357,7 @@ def test_introspection_provider_introspect_column_with_table_name_is_same_with_k
     client.run_statement("drop database db1;")
 
 
-def test_introspection_provider_introspect_column_with_column_name_is_same_with_table(
+def test_introspector_introspect_column_with_column_name_is_same_with_table(
     mariadb_server: Type[MariaDBServer],
 ):
     mocklog = Mock()
@@ -392,7 +392,7 @@ def test_introspection_provider_introspect_column_with_column_name_is_same_with_
     client.run_statement("drop database db1;")
 
 
-def test_introspection_provider_introspect_insert_into_after_VALUES_would_suggest_column_hint(
+def test_introspector_introspect_insert_into_after_VALUES_would_suggest_column_hint(
     mariadb_server: Type[MariaDBServer],
 ):
     mocklog = Mock()
@@ -433,7 +433,7 @@ def test_introspection_provider_introspect_insert_into_after_VALUES_would_sugges
         "insert into t1 (a, b, c) VALUES (1 , 2 , 3",
     ],
 )
-def test_introspection_provider_introspect_insert_into_after_VALUES_would_suggest_column_hint_when_cursor_in_third_value(
+def test_introspector_introspect_insert_into_after_VALUES_would_suggest_column_hint_when_cursor_in_third_value(
     mariadb_server: Type[MariaDBServer], input: str
 ):
     mocklog = Mock()
@@ -467,7 +467,7 @@ def test_introspection_provider_introspect_insert_into_after_VALUES_would_sugges
     client.run_statement("drop database db1;")
 
 
-def test_introspection_provider_introspect_insert_into_after_VALUES_would_suggest_column_hint_when_cursor_out_of_column_index(
+def test_introspector_introspect_insert_into_after_VALUES_would_suggest_column_hint_when_cursor_out_of_column_index(
     mariadb_server: Type[MariaDBServer],
 ):
     mocklog = Mock()
@@ -499,7 +499,7 @@ def test_introspection_provider_introspect_insert_into_after_VALUES_would_sugges
     client.run_statement("drop database db1;")
 
 
-def test_introspection_provider_introspect_insert_into_after_VALUES_would_suggest_column_hint_when_cursor_out_of_column_index_and_without_column_list(
+def test_introspector_introspect_insert_into_after_VALUES_would_suggest_column_hint_when_cursor_out_of_column_index_and_without_column_list(
     mariadb_server: Type[MariaDBServer],
 ):
     mocklog = Mock()
@@ -533,7 +533,7 @@ def test_introspection_provider_introspect_insert_into_after_VALUES_would_sugges
     client.run_statement("drop database db1;")
 
 
-def test_introspection_provider_introspect_insert_into_after_VALUES_would_suggest_column_hint_without_column_list(
+def test_introspector_introspect_insert_into_after_VALUES_would_suggest_column_hint_without_column_list(
     mariadb_server: Type[MariaDBServer],
 ):
     mocklog = Mock()
@@ -567,7 +567,7 @@ def test_introspection_provider_introspect_insert_into_after_VALUES_would_sugges
     client.run_statement("drop database db1;")
 
 
-def test_introspection_provider_introspect_insert_into_after_VALUES_would_suggest_column_hint_for_multi_value_list(
+def test_introspector_introspect_insert_into_after_VALUES_would_suggest_column_hint_for_multi_value_list(
     mariadb_server: Type[MariaDBServer],
 ):
     mocklog = Mock()
@@ -587,8 +587,8 @@ def test_introspection_provider_introspect_insert_into_after_VALUES_would_sugges
     autocompleter.refresh()
 
     result = introspector.get_instropection(
-        "insert into t1 VALUES (1,2), (3,4), (5,",
-        len("insert into t1 VALUES (1,2), (3,4), (5,"),
+        "insert into t1 VALUES (1,2,3), (3,4,5), (5,",
+        len("insert into t1 VALUES (1,2,3), (3,4,5), (5,"),
         autocompleter,
     )
 
@@ -601,7 +601,41 @@ def test_introspection_provider_introspect_insert_into_after_VALUES_would_sugges
     client.run_statement("drop database db1;")
 
 
-def test_introspection_provider_introspect_column_after_user_column(
+def test_introspector_introspect_insert_into_after_VALUES_would_suggest_column_hint_for_multi_value_list_2(
+    mariadb_server: Type[MariaDBServer],
+):
+    mocklog = Mock()
+    cfg = ClientConfig(mocklog, name="nonexistentcfg.json")  # default config
+
+    mariadb_server(mocklog, cfg)
+
+    manager = MariadbClientManagager(mocklog, cfg)
+    client = manager.client_for_code_block
+    manager.start()
+    client.run_statement("create database db1;")
+    client.run_statement("use db1;")
+    client.run_statement("create table t1 (c int, b int, a int);")
+
+    introspector = Introspector()
+    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
+    autocompleter.refresh()
+
+    result = introspector.get_instropection(
+        "insert into t1 (a, c, b) VALUES (1,2,3), (3,4,5), (5,",
+        len("insert into t1 (a, c, b) VALUES (1,2,3), (3,4,5), (5,"),
+        autocompleter,
+    )
+
+    assert {
+        "type": "column_hint",
+        "hint": "c",
+        "table_name": "t1",
+        "value_index": 1,
+    } == result
+    client.run_statement("drop database db1;")
+
+
+def test_introspector_introspect_column_after_user_column(
     mariadb_server: Type[MariaDBServer],
 ):
     mocklog = Mock()
@@ -634,7 +668,7 @@ def test_introspection_provider_introspect_column_after_user_column(
     client.run_statement("drop database db1;")
 
 
-def test_introspection_provider_introspect_user_column_in_system_table(
+def test_introspector_introspect_user_column_in_system_table(
     mariadb_server: Type[MariaDBServer],
 ):
     mocklog = Mock()
@@ -667,7 +701,7 @@ def test_introspection_provider_introspect_user_column_in_system_table(
     client.run_statement("drop database db1;")
 
 
-def test_introspection_provider_introspect_user_column_in_user_create_table(
+def test_introspector_introspect_user_column_in_user_create_table(
     mariadb_server: Type[MariaDBServer],
 ):
     mocklog = Mock()
