@@ -1,0 +1,9 @@
+{
+    "user": "root",
+    "host": "localhost",
+    "password": "",
+    "start_server": "True",
+    "client_bin": "/home/jovyan/mariadb/bin/mariadb",
+    "server_bin": "/home/jovyan/mariadb/bin/mariadbd",
+    "db_init_bin": "/home/jovyan/mariadb/scripts/mysql_install_db"
+}
