@@ -41,6 +41,10 @@ USER ${USER}
 RUN pip install --no-cache --upgrade pip && \
     pip install --no-cache notebook
 
+RUN ls -la ./
+RUN ls -la ./mariadb_kernel/
+RUN ls -la ./mariadb_kernel/binder
+
 RUN mkdir -p ${HOME}/.jupyter
 RUN cp binder/mariadb_config.json ${HOME}/.jupyter/
 
