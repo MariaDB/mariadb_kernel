@@ -1,16 +1,7 @@
 set -ex
 
-cd ~/
-
-wget https://downloads.mariadb.org/rest-api/12497
-mkdir mariadb
-tar -xf ./12497 -C ./mariadb --strip-components 1
-
-cd -
-
 mkdir -p /home/jovyan/.jupyter
 cp binder/mariadb_config.json /home/jovyan/.jupyter/
 
 python setup.py --version
-
 python -m mariadb_kernel.install
