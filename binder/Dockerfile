@@ -35,8 +35,14 @@ ENV HOME /home/${USER}
 COPY . ${HOME}
 RUN chown -R ${NB_UID} ${HOME}
 
-WORKDIR ${HOME}
+WORKDIR ${HOME}/mariadb_kernel
 USER ${USER}
 
 RUN pip install --no-cache --upgrade pip && \
     pip install --no-cache notebook
+
+RUN mkdir -p ${HOME}/.jupyter
+RUN cp binder/mariadb_config.json ${HOME}/.jupyter/
+
+RUN python setup.py develop
+RUN python -m mariadb_kernel.install
