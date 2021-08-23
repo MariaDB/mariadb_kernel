@@ -48,7 +48,7 @@ def convert_help_text_to_beautiful_html(text):
         result,
         flags=re.MULTILINE | re.IGNORECASE,
     )
-    regex_for_mariadb_command = r"(Mariadb>)(.+;)"
+    regex_for_mariadb_command = r"(Mariadb>)(.+[;,])"
     result = re.sub(
         regex_for_mariadb_command,
         r"<b>\1</b><code>\2</code>",
@@ -153,13 +153,13 @@ class Introspector:
                                                     cur_col_text = ""
                                                 else:
                                                     cur_col_text += str(curToken)
-                                            cols.append(cur_col_text)
+                                            cols.append(cur_col_text.lstrip().rstrip())
                                             if value_index >= len(cols):
                                                 return {
                                                     "type": "column_hint",
                                                     "hint": "out of column",
                                                 }
-                                            hint = cols[value_index].lstrip()
+                                            hint = cols[value_index].lstrip().rstrip()
                                         elif isinstance(
                                             in_parenthesis_token, Identifier
                                         ):
@@ -349,11 +349,11 @@ class Introspector:
                     and value_index != None
                     and table_name != None
                 ):
+                    result = autocompleter.executor.get_column_type_list(
+                        table_name, autocompleter.completer.dbname
+                    )
                     if hint == "":
                         # ex: insert into t1 VALUES (1,2,
-                        result = autocompleter.executor.get_column_type_list(
-                            table_name, autocompleter.completer.dbname
-                        )
                         if int(value_index) >= len(result):
                             hint = "out of column"
                         else:
@@ -361,9 +361,6 @@ class Introspector:
                                 if i == value_index:
                                     hint = item.name + " " + item.type
                     else:
-                        result = autocompleter.executor.get_column_type_list(
-                            table_name, autocompleter.completer.dbname
-                        )
                         for item in result:
                             if item.name == hint:
                                 hint = item.name + " " + item.type
