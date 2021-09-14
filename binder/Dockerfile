@@ -8,23 +8,33 @@ ARG DEBIAN_FRONTEND=noninteractive
 # Install updates and required packages
 RUN apt-get update && \
     apt-get -y install -q \
-    apt-utils \
-    sudo \
-    git \
-    curl \
-    wget \
-    apt-transport-https \
-    build-essential \
-    libxml2-dev \
-    libxslt1-dev \
-    zlib1g-dev \
-    pkg-config
+        apt-utils \
+        sudo \
+        git \
+        curl \
+        wget \
+        apt-transport-https \
+        build-essential \
+        libxml2-dev \
+        libxslt1-dev \
+        zlib1g-dev \
+        libncurses5-dev \
+        gnutls-dev \
+        bison \
+        pkg-config && \
+    apt-get -y build-dep -q mariadb-server
 
-# Add custom MariaDB repositories
-RUN curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup -o mariadb_repo_setup && bash mariadb_repo_setup --skip-maxscale --skip-tools
+RUN git clone -b preview-10.7-MDEV-25015-sformat https://github.com/MariaDB/server.git
 
-# Install MariaDB
-RUN apt install -y mariadb-server
+WORKDIR ./server
+
+RUN cmake . -DMYSQL_MAINTAINER_MODE=OFF -DCONC_WITH_{UNITTEST,SSL}=OFF -DWITH_UNIT_TESTS=OFF -DCMAKE_BUILD_TYPE=Debug -DPLUGIN_{ARCHIVE,TOKUDB,MROONGA,OQGRAPH,ROCKSDB,CONNECT,SPIDER,SPHINX,COLUMNSTORE}=NO -DWITH_EMBEDDED_SERVER=OFF -DWITH_MARIABACKUP=OFF
+
+RUN make -j4
+
+RUN make install
+
+WORKDIR ${HOME}
 
 ENV USER jovyan
 ENV NB_UID 1000
