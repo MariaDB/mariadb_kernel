@@ -5,6 +5,8 @@ USER root
 # This will make apt-get install without question
 ARG DEBIAN_FRONTEND=noninteractive
 
+RUN sed -Ei 's/^# deb-src /deb-src /' /etc/apt/sources.list
+
 # Install updates and required packages
 RUN apt-get update
 
