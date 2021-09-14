@@ -6,14 +6,10 @@ USER root
 ARG DEBIAN_FRONTEND=noninteractive
 
 # Install updates and required packages
-RUN apt-get update && \
-    apt-get -y install -q \
-        apt-utils \
-        sudo \
+RUN apt-get update
+
+RUN apt-get -y install -q \
         git \
-        curl \
-        wget \
-        apt-transport-https \
         build-essential \
         libxml2-dev \
         libxslt1-dev \
@@ -21,8 +17,9 @@ RUN apt-get update && \
         libncurses5-dev \
         gnutls-dev \
         bison \
-        pkg-config && \
-    apt-get -y build-dep -q mariadb-server
+        pkg-config
+
+RUN apt-get -y build-dep -q mariadb-server
 
 RUN git clone -b preview-10.7-MDEV-25015-sformat https://github.com/MariaDB/server.git
 
