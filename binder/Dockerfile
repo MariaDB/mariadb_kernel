@@ -19,6 +19,8 @@ RUN apt-get -y install -q \
         bison \
         pkg-config
 
+RUN apt-get -y upgrade
+
 RUN apt-get -y build-dep -q mariadb-server
 
 RUN git clone -b preview-10.7-MDEV-25015-sformat https://github.com/MariaDB/server.git
