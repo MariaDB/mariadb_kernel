@@ -25,7 +25,7 @@ RUN apt-get -y upgrade
 
 RUN apt-get -y build-dep -q mariadb-server
 
-RUN git clone -b preview-10.7-MDEV-25015-sformat https://github.com/MariaDB/server.git
+RUN git clone -b preview-10.7-MDEV-4742-natural-sort https://github.com/MariaDB/server.git
 
 WORKDIR ./server
 
