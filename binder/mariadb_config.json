@@ -3,7 +3,7 @@
     "host": "localhost",
     "password": "",
     "start_server": "True",
-    "client_bin": "mysql",
-    "server_bin": "mysqld",
-    "db_init_bin": "mysql_install_db"
+    "client_bin": "/usr/local/mysql/bin/mysql",
+    "server_bin": "/usr/local/mysql/bin/mysqld",
+    "db_init_bin": "/usr/local/mysql/scripts/mysql_install_db"
 }
