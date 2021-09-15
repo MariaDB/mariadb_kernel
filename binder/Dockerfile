@@ -8,23 +8,11 @@ ARG DEBIAN_FRONTEND=noninteractive
 # Install updates and required packages
 RUN apt-get update && \
     apt-get -y install -q \
-    apt-utils \
-    sudo \
-    git \
-    curl \
-    wget \
-    apt-transport-https \
-    build-essential \
-    libxml2-dev \
-    libxslt1-dev \
-    zlib1g-dev \
-    pkg-config
+    curl libaio1 libtinfo5 libncurses5
 
-# Add custom MariaDB repositories
-RUN curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup -o mariadb_repo_setup && bash mariadb_repo_setup --skip-maxscale --skip-tools
-
-# Install MariaDB
-RUN apt install -y mariadb-server
+RUN curl -sS https://ci.mariadb.org/18337/amd64-debian-9-bintar-initd/mariadb-10.7.0-linux-x86_64.tar.gz \
+    | tar -zxf - -C /usr/local/ --strip-components=1  --exclude '*/include/mysql/server' \
+    --exclude '*/mysql-test' --exclude '*/sql-bench' --exclude '*/man' --exclude '*/support-files'
 
 ENV USER jovyan
 ENV NB_UID 1000

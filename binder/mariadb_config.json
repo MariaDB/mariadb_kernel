@@ -3,7 +3,7 @@
     "host": "localhost",
     "password": "",
     "start_server": "True",
-    "client_bin": "mysql",
-    "server_bin": "mysqld",
-    "db_init_bin": "mysql_install_db"
+    "client_bin": "mariadb",
+    "server_bin": "mariadbd",
+    "db_init_bin": "/usr/local/scripts/mariadb-install-db"
 }
