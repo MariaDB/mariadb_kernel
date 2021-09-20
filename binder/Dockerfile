@@ -10,7 +10,7 @@ RUN apt-get update && \
     apt-get -y install -q \
     curl libaio1 libtinfo5 libncurses5
 
-RUN curl -sS https://ci.mariadb.org/18364/amd64-debian-9-bintar-initd/mariadb-10.7.0-linux-x86_64.tar.gz \
+RUN curl -sS https://mirrors.chroot.ro/mariadb/mariadb-10.7.0/MDEV-26519-json-histograms/mariadb-10.7.0-mdev-26519-json-histograms-linux-x86_64.tar.gz \
     | tar -zxf - -C /usr/local/ --strip-components=1  --exclude '*/include/mysql/server' \
     --exclude '*/mysql-test' --exclude '*/sql-bench' --exclude '*/man' --exclude '*/support-files'
 
