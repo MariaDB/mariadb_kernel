@@ -11,31 +11,13 @@ RUN sed -Ei 's/^# deb-src /deb-src /' /etc/apt/sources.list
 RUN apt-get update
 
 RUN apt-get -y install -q \
-        git \
-        build-essential \
-        libxml2-dev \
-        libxslt1-dev \
-        zlib1g-dev \
-        libncurses5-dev \
-        gnutls-dev \
-        bison \
-        pkg-config
+    curl libaio1 libtinfo5 libncurses5
 
-RUN apt-get -y upgrade
 
-RUN apt-get -y build-dep -q mariadb-server
+RUN curl -sS https://mirrors.chroot.ro/mariadb/mariadb-10.7.0/MDEV-4742-natural-sort/mariadb-10.7.0-mdev-4742-natural-sort-linux-x86_64.tar.gz \
+    | tar -zxf - -C /usr/local/ --strip-components=1  --exclude '*/include/mysql/server' \
+    --exclude '*/mysql-test' --exclude '*/sql-bench' --exclude '*/man' --exclude '*/support-files'
 
-RUN git clone -b preview-10.7-MDEV-4742-natural-sort https://github.com/MariaDB/server.git
-
-WORKDIR ./server
-
-RUN cmake . -DMYSQL_MAINTAINER_MODE=OFF -DCONC_WITH_{UNITTEST,SSL}=OFF -DWITH_UNIT_TESTS=OFF -DCMAKE_BUILD_TYPE=Debug -DPLUGIN_{ARCHIVE,TOKUDB,MROONGA,OQGRAPH,ROCKSDB,CONNECT,SPIDER,SPHINX,COLUMNSTORE}=NO -DWITH_EMBEDDED_SERVER=OFF -DWITH_MARIABACKUP=OFF
-
-RUN make -j4
-
-RUN make install
-
-WORKDIR ${HOME}
 
 ENV USER jovyan
 ENV NB_UID 1000
