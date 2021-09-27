@@ -6,5 +6,5 @@
     "client_bin": "mariadb",
     "server_bin": "mariadbd",
     "db_init_bin": "/usr/local/scripts/mariadb-install-db",
-    "extra_server_config": ["--version=10.7.0-MariaDB-MDEV-25015-sformat", "--skip_log_error", "--skip-host-cache", "--skip-name-resolve"]
+    "extra_server_config": ["--version=10.7.0-MariaDB-MDEV-9245-password-reuse", "--skip_log_error", "--skip-host-cache", "--skip-name-resolve"]
 }

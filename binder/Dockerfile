@@ -13,7 +13,7 @@ RUN apt-get update
 RUN apt-get -y install -q \
     curl libaio1 libtinfo5 libncurses5
 
-RUN curl -sS https://mirrors.chroot.ro/mariadb/mariadb-10.7.0/MDEV-25015-sformat/mariadb-10.7.0-mdev-25015-sformat-linux-x86_64.tar.gz \
+RUN curl -sS https://mirrors.chroot.ro/mariadb/mariadb-10.7.0/MDEV-9245-password-reuse/mariadb-10.7.0-mdev-9245-password-reuse-linux-x86_64.tar.gz \
     | tar -zxf - -C /usr/local/ --strip-components=1  --exclude '*/include/mysql/server' \
     --exclude '*/mysql-test' --exclude '*/sql-bench' --exclude '*/man' --exclude '*/support-files'
 
