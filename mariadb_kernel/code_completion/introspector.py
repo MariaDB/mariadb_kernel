@@ -3,9 +3,9 @@ from bs4.element import Tag
 
 from sqlparse.sql import Function, Identifier, IdentifierList, Parenthesis, Values
 from sqlparse.tokens import Keyword, Punctuation, _TokenType
-from mariadb_kernel.autocompleter import Autocompleter
+from .autocompleter import Autocompleter
 import re
-from mariadb_kernel.completion_engine import suggest_type, last_word
+from .completion_engine import suggest_type, last_word
 import sqlparse
 from bs4 import BeautifulSoup
 

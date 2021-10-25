@@ -1,10 +1,10 @@
-from mariadb_kernel.sql_fetch import SqlFetch
+from .sql_fetch import SqlFetch
 from typing import Generator, List, Tuple
 
 from re import compile, escape
 from collections import Counter
 from prompt_toolkit.completion import Completer, Completion
-from mariadb_kernel.completion_engine import suggest_type
+from .completion_engine import suggest_type
 from mycli.packages.parseutils import last_word
 from mycli.packages.filepaths import parse_path, complete_path, suggest_path
 from mycli.packages.special.favoritequeries import FavoriteQueries

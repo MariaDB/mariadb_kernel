@@ -9,14 +9,14 @@ import math
 
 
 class SqlFetch:
-    def __init__(self, maridb_client: MariaDBClient, log: logging.Logger) -> None:
-        self.maridb_client = maridb_client
+    def __init__(self, mariadb_client: MariaDBClient, log: logging.Logger) -> None:
+        self.mariadb_client = mariadb_client
         self.log = log
         self.update_db_name()
 
     def fetch_info(self, query: str, function: Callable[[List[DataFrame]], List]):
-        result_html = self.maridb_client.run_statement(query)
-        if self.maridb_client.iserror():
+        result_html = self.mariadb_client.run_statement(query)
+        if self.mariadb_client.iserror():
             raise Exception(f"Client returned an error : {result_html}")
         try:
             if result_html == "Query OK":
@@ -94,10 +94,10 @@ class SqlFetch:
         table_columns_query = """select TABLE_NAME, COLUMN_NAME from information_schema.columns
                                                                 where table_schema = '%s'
                                                                 order by table_name,ordinal_position;"""
-        result_html = self.maridb_client.run_statement(
+        result_html = self.mariadb_client.run_statement(
             table_columns_query % self.dbname
         )
-        if self.maridb_client.iserror():
+        if self.mariadb_client.iserror():
             raise Exception(f"Client returned an error : {result_html}")
         try:
             if result_html == "Query OK":
@@ -149,8 +149,8 @@ class SqlFetch:
         database_tables_query = (
             """select TABLE_SCHEMA, TABLE_NAME from information_schema.TABLES"""
         )
-        result_html = self.maridb_client.run_statement(database_tables_query)
-        if self.maridb_client.iserror():
+        result_html = self.mariadb_client.run_statement(database_tables_query)
+        if self.mariadb_client.iserror():
             raise Exception(f"Client returned an error : {result_html}")
         try:
             if result_html == "Query OK":
@@ -193,8 +193,8 @@ class SqlFetch:
 
     def get_tables_in_db_html(self, db: str):
         tables_from_db_query = f"show tables from {db}"
-        result_html = self.maridb_client.run_statement(tables_from_db_query)
-        if self.maridb_client.iserror():
+        result_html = self.mariadb_client.run_statement(tables_from_db_query)
+        if self.mariadb_client.iserror():
             raise Exception(f"Client returned an error : {result_html}")
         if result_html == "Query OK":
             result_html = ""
@@ -202,8 +202,8 @@ class SqlFetch:
 
     def get_table_schema_html(self, table: str, db: str):
         table_schema_query = f"describe {db}.{table}"
-        result_html = self.maridb_client.run_statement(table_schema_query)
-        if self.maridb_client.iserror():
+        result_html = self.mariadb_client.run_statement(table_schema_query)
+        if self.mariadb_client.iserror():
             raise Exception(f"Client returned an error : {result_html}")
         if result_html == "Query OK":
             result_html = ""
@@ -211,8 +211,8 @@ class SqlFetch:
 
     def get_partial_table_row_html(self, table: str, db: str, limit: int = 5):
         table_rows_query = f"select * from {db}.{table} limit {limit}"
-        result_html = self.maridb_client.run_statement(table_rows_query)
-        if self.maridb_client.iserror():
+        result_html = self.mariadb_client.run_statement(table_rows_query)
+        if self.mariadb_client.iserror():
             raise Exception(f"Client returned an error : {result_html}")
         if result_html == "Query OK":
             result_html = ""
@@ -225,8 +225,8 @@ class SqlFetch:
                                     TABLE_SCHEMA = '{db}' AND
                                     TABLE_NAME = '{table}' AND
                                     COLUMN_NAME = '{column}';"""
-        result_html = self.maridb_client.run_statement(column_type_query)
-        if self.maridb_client.iserror():
+        result_html = self.mariadb_client.run_statement(column_type_query)
+        if self.mariadb_client.iserror():
             raise Exception(f"Client returned an error : {result_html}")
         if result_html == "Query OK":
             result_html = ""
@@ -243,8 +243,8 @@ class SqlFetch:
                                          TABLE_SCHEMA = '{db}' AND
                                          TABLE_NAME = '{table}'
                                      ORDER BY ORDINAL_POSITION;"""
-        result_html = self.maridb_client.run_statement(column_type_list_query)
-        if self.maridb_client.iserror():
+        result_html = self.mariadb_client.run_statement(column_type_list_query)
+        if self.mariadb_client.iserror():
             raise Exception(f"Client returned an error : {result_html}")
 
         if result_html == "Query OK":
@@ -261,15 +261,15 @@ class SqlFetch:
 
     def get_help_text(self, name: str) -> str:
         help_text_query = f"""help '{name}';"""
-        text = self.maridb_client.run_statement(help_text_query)
+        text = self.mariadb_client.run_statement(help_text_query)
         if text == "Query OK":
             text = ""
         return text
 
     def get_column_row_html(self, column: str, table: str, db: str, limit: int = 5):
         column_rows_query = f"select {column} from {db}.{table} limit {limit}"
-        result_html = self.maridb_client.run_statement(column_rows_query)
-        if self.maridb_client.iserror():
+        result_html = self.mariadb_client.run_statement(column_rows_query)
+        if self.mariadb_client.iserror():
             raise Exception(f"Client returned an error : {result_html}")
         if result_html == "Query OK":
             result_html = ""

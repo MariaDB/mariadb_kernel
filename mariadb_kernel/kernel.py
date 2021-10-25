@@ -2,7 +2,6 @@
 # Copyright (c) MariaDB Foundation.
 # Distributed under the terms of the Modified BSD License.
 
-from mariadb_kernel.sql_fetch import SqlFetch
 from ipykernel.kernelbase import Kernel
 
 from ._version import version as __version__
@@ -13,8 +12,9 @@ from mariadb_kernel.mariadb_client import (
 )
 from mariadb_kernel.code_parser import CodeParser
 from mariadb_kernel.mariadb_server import MariaDBServer
-from mariadb_kernel.autocompleter import Autocompleter
-from mariadb_kernel.introspector import Introspector
+from .code_completion.sql_fetch import SqlFetch
+from .code_completion.autocompleter import Autocompleter
+from .code_completion.introspector import Introspector
 
 import logging
 import pandas
@@ -23,23 +23,6 @@ import os
 import signal
 
 _EXPERIMENTAL_KEY_NAME = "_jupyter_types_experimental"
-
-
-class MariadbClientManagager:
-    client_for_code_block: MariaDBClient
-    client_for_autocompleter: MariaDBClient
-
-    def __init__(self, log: logging.Logger, client_config: ClientConfig) -> None:
-        self.client_for_code_block = MariaDBClient(log, client_config)
-        self.client_for_autocompleter = MariaDBClient(log, client_config)
-
-    def start(self):
-        self.client_for_code_block.start()
-        self.client_for_autocompleter.start()
-
-    def stop(self):
-        self.client_for_code_block.stop()
-        self.client_for_autocompleter.stop()
 
 
 class MariaDBKernel(Kernel):
@@ -56,10 +39,7 @@ class MariaDBKernel(Kernel):
         Kernel.__init__(self, **kwargs)
         self.delimiter = ";"
         self.client_config = ClientConfig(self.log)
-        self.mariadb_client_manager = MariadbClientManagager(
-            self.log, self.client_config
-        )
-        self.mariadb_client = self.mariadb_client_manager.client_for_code_block
+        self.mariadb_client = MariaDBClient(self.log, self.client_config)
         self.mariadb_server = None
         self.data = {"last_select": pandas.DataFrame([])}
 
@@ -69,7 +49,7 @@ class MariaDBKernel(Kernel):
             self.log.setLevel(logging.INFO)
 
         try:
-            self.mariadb_client_manager.start()
+            self.mariadb_client.start()
         except ServerIsDownError:
             if not self.client_config.start_server():
                 self.log.error(
@@ -86,13 +66,23 @@ class MariaDBKernel(Kernel):
 
             # Reconnect the client now that the server is up
             if self.mariadb_server.is_up():
-                self.mariadb_client_manager.start()
+                self.mariadb_client.start()
 
-        self.autocompleter = Autocompleter(
-            self.mariadb_client_manager.client_for_autocompleter,
-            self.mariadb_client_manager.client_for_code_block,
-            self.log,
-        )
+        # Create autocompletion/introspection objects based on whether
+        # the user enabled this feature or not
+        self.autocompleter = None
+        self.introspector = None
+        if self.client_config.autocompletion_enabled():
+            # try:
+            self.autocompleter = Autocompleter(
+                self.mariadb_client, self.client_config, self.log
+            )
+            self.introspector = Introspector()
+            # except:
+            # # Something went terribly wrong, disabling the feature
+            # self.log.error("Code completion functionalities were disabled due to an unexpected error")
+            # self.autocompleter = None
+            # self.introspector = None
 
     def get_delimiter(self):
         return self.delimiter
@@ -162,8 +152,10 @@ class MariaDBKernel(Kernel):
                 self.send_response(self.iopub_socket, "display_data", display_content)
 
         self._execute_magics(parser.get_magics())
+
         if self.autocompleter:
             self.autocompleter.refresh(False)
+
         return rv
 
     def kill_server(self):
@@ -196,20 +188,21 @@ class MariaDBKernel(Kernel):
                     f"Failed querying server (of number of clients connected), error: {e}"
                 )
 
-        self.mariadb_client_manager.stop()
+        self.mariadb_client.stop()
+        expected_clients = 1
 
-        if num_clients is not None and num_clients <= 1:
+        if self.autocompleter:
+            self.autocompleter.shutdown()
+            expected_clients = 2
+
+        if num_clients is not None and num_clients <= expected_clients:
             self.log.info("No more clients connected to server")
             self.kill_server()
 
     def do_complete(self, code, cursor_pos):
-        if hasattr(self, "autocompleter") is False:
-            self.log.info("No autocompleter, create one")
-            self.autocompleter = Autocompleter(
-                self.mariadb_client_manager.client_for_autocompleter,
-                self.mariadb_client_manager.client_for_code_block,
-                self.log,
-            )
+        if not self.autocompleter:
+            return {"status": "ok", "matches": []}
+
         completion_list = self.autocompleter.get_suggestions(code, cursor_pos)
         match_text_list = [completion.text for completion in completion_list]
         offset = 0
@@ -237,12 +230,16 @@ class MariaDBKernel(Kernel):
         }
 
     def do_inspect(self, code, cursor_pos, detail_level):
-        introspection_provider = Introspector()
-        result_html = introspection_provider.inspect(
+        empty_result = {"status": "ok", "data": {}, "metadata": {}, "found": False}
+        if not self.introspector:
+            return empty_result
+
+        result_html = self.introspector.inspect(
             code, int(cursor_pos), self.autocompleter
         )
         if result_html is None or result_html == "":
-            return {"status": "ok", "data": {}, "metadata": {}, "found": False}
+            return empty_result
+
         return {
             "status": "ok",
             "data": {"text/html": result_html},

@@ -4,8 +4,8 @@ from ..kernel import MariadbClientManagager
 
 from ..mariadb_server import MariaDBServer
 from ..client_config import ClientConfig
-from ..introspector import Introspector
-from ..autocompleter import Autocompleter
+from ..code_completion.introspector import Introspector
+from ..code_completion.autocompleter import Autocompleter
 
 from unittest.mock import Mock
 import pytest

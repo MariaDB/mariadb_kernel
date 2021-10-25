@@ -5,7 +5,7 @@ from ..mariadb_client import MariaDBClient
 from ..mariadb_server import MariaDBServer
 from ..client_config import ClientConfig
 
-from ..sql_fetch import SqlFetch
+from ..code_completion.sql_fetch import SqlFetch
 from unittest.mock import Mock
 
 import unittest

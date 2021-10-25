@@ -7,7 +7,7 @@ from ..mariadb_server import MariaDBServer
 from ..client_config import ClientConfig
 
 from unittest.mock import Mock
-from ..autocompleter import Autocompleter
+from ..code_completion.autocompleter import Autocompleter
 
 import unittest
 import pytest

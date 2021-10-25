@@ -2,9 +2,10 @@ from logging import Logger
 import threading
 from typing import Callable, List
 from mycli.packages.special.main import COMMANDS
-from mariadb_kernel.sql_analyze import SQLAnalyze
-from mariadb_kernel.sql_fetch import SqlFetch
+from .sql_analyze import SQLAnalyze
+from .sql_fetch import SqlFetch
 from mariadb_kernel.mariadb_client import MariaDBClient
+from mariadb_kernel.client_config import ClientConfig
 from prompt_toolkit.document import Document
 from threading import Thread
 
@@ -85,26 +86,32 @@ class Autocompleter(object):
     def __init__(
         self,
         mariadb_client: MariaDBClient,
-        code_block_mariadb_client: MariaDBClient,
+        config: ClientConfig,
         log: Logger,
     ) -> None:
         self.log = log
-        self.autocompleter_mariadb_client = mariadb_client
-        self.executor = SqlFetch(mariadb_client, log)
-        self.code_blcok_executor = SqlFetch(code_block_mariadb_client, log)
+
+        # A client connection is already established, so things shouldn't go wrong here
+        # But in case the unexpected happen, there's nothing we can do here, exception
+        # needs to be propagated upwards
+        self.log.info("Starting a client connection used in code completion")
+        self.completion_mariadb_client = MariaDBClient(log, config)
+        self.completion_mariadb_client.start()
+
+        self.executor = SqlFetch(self.completion_mariadb_client, log)
+        self.code_block_executor = SqlFetch(mariadb_client, log)
         self.completer = SQLAnalyze(log, True)
         self.refresher = Refresher(self.completer, self.executor, log)
         self.refresh()
 
     def refresh(self, sync: bool = True):
-        code_block_db_name = self.code_blcok_executor.get_db_name()
+        code_block_db_name = self.code_block_executor.get_db_name()
         if self.executor.dbname != code_block_db_name and code_block_db_name != "":
-            self.autocompleter_mariadb_client.run_statement(f"use {code_block_db_name}")
-            self.executor.dbname = self.code_blcok_executor.get_db_name()
+            self.completion_mariadb_client.run_statement(f"use {code_block_db_name}")
+            self.executor.dbname = self.code_block_executor.get_db_name()
         self.refresher.refresh(sync)
 
     def get_suggestions(self, code: str, cursor_pos: int):
-        # self.refresh()
         result = self.completer.get_completions(
             document=Document(text=code, cursor_position=cursor_pos),
             complete_event=None,
@@ -112,3 +119,7 @@ class Autocompleter(object):
             smart_completion=True,
         )
         return list(result)
+
+    def shutdown(self):
+        self.log.info("Shutting down code completion client connection")
+        self.completion_mariadb_client.stop()

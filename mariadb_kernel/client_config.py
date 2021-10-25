@@ -39,6 +39,7 @@ class ClientConfig:
                 "--auth-root-authentication-method=normal",
             ],
             "debug": "False",
+            "code_completion": "True",
         }
 
         self._load_config()
@@ -143,3 +144,6 @@ class ClientConfig:
 
     def debug_logging(self):
         return self.default_config["debug"] == "True"
+
+    def autocompletion_enabled(self):
+        return self.default_config["code_completion"] == "True"
