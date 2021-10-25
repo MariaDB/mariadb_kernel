@@ -279,6 +279,8 @@ class Introspector:
     def inspect(
         self, code: str, cursor_pos: int, autocompleter: Autocompleter
     ) -> Union[str, None]:
+        autocompleter.sync_data()
+
         result = self.get_instropection(code, cursor_pos, autocompleter)
         if result:
             word_type = result.get("type")

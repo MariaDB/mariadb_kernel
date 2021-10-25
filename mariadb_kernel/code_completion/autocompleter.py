@@ -7,18 +7,31 @@ from .sql_fetch import SqlFetch
 from mariadb_kernel.mariadb_client import MariaDBClient
 from mariadb_kernel.client_config import ClientConfig
 from prompt_toolkit.document import Document
-from threading import Thread
+from threading import Thread, Event
 
 
 class Refresher(object):
-    def __init__(self, completer: SQLAnalyze, executor: SqlFetch, log: Logger) -> None:
+    def __init__(self, executor: SqlFetch, log: Logger) -> None:
         self.executor = executor
         self.fetch_keywords = self.executor.keywords()
         self.fetch_functions = self.executor.sql_functions()
         self.log = log
-        self.refresh_complete = True
+
+        self.completer = None
         self.refresh_thread = None
-        self.old_completer = completer
+        self.stop_condition = Event()
+
+    def stop_and_wait(self):
+        # No previous refresh sequence was executed
+        if not self.refresh_thread:
+            return
+        self.stop_condition.set()
+        self.refresh_thread.join()
+        self.stop_condition.clear()
+
+    def wait_for_results(self):
+        self.refresh_thread.join()
+        return self.completer
 
     def refresh_databases(self):
         self.completer.extend_database_names(self.executor.databases())
@@ -53,7 +66,6 @@ class Refresher(object):
         self.completer.extend_session_variables(self.executor.session_variables())
 
     def refresh_all(self):
-        self.refresh_complete = False
         self.completer = SQLAnalyze(self.log, True)
         refresh_func_list: List[Callable] = [
             self.refresh_databases,
@@ -68,18 +80,15 @@ class Refresher(object):
         ]
         for refresh_func in refresh_func_list:
             refresh_func()
+            if self.stop_condition.is_set():
+                return
+
         self.completer.set_keywords(self.fetch_keywords)
         self.completer.set_functions(self.fetch_functions)
-        self.refresh_complete = True
-        self.old_completer.reset_completions(self.completer)
 
-    def refresh(self, sync=False):
-        if sync:
-            self.refresh_all()
-        else:
-            if self.refresh_complete is True:
-                self.refresh_thread = Thread(target=self.refresh_all)
-                self.refresh_thread.start()
+    def refresh(self):
+        self.refresh_thread = Thread(target=self.refresh_all)
+        self.refresh_thread.start()
 
 
 class Autocompleter(object):
@@ -91,8 +100,10 @@ class Autocompleter(object):
     ) -> None:
         self.log = log
 
+        self.completer = SQLAnalyze(log, True)
+
         # A client connection is already established, so things shouldn't go wrong here
-        # But in case the unexpected happen, there's nothing we can do here, exception
+        # But in case the unexpected happens, there's nothing we can do here, exception
         # needs to be propagated upwards
         self.log.info("Starting a client connection used in code completion")
         self.completion_mariadb_client = MariaDBClient(log, config)
@@ -100,18 +111,33 @@ class Autocompleter(object):
 
         self.executor = SqlFetch(self.completion_mariadb_client, log)
         self.code_block_executor = SqlFetch(mariadb_client, log)
-        self.completer = SQLAnalyze(log, True)
-        self.refresher = Refresher(self.completer, self.executor, log)
+
+        self.refresher = Refresher(self.executor, log)
+
         self.refresh()
 
-    def refresh(self, sync: bool = True):
+    def refresh(self):
         code_block_db_name = self.code_block_executor.get_db_name()
         if self.executor.dbname != code_block_db_name and code_block_db_name != "":
-            self.completion_mariadb_client.run_statement(f"use {code_block_db_name}")
-            self.executor.dbname = self.code_block_executor.get_db_name()
-        self.refresher.refresh(sync)
+            self.completion_mariadb_client.run_statement(
+                f"use {code_block_db_name}"
+            )  # TODO: to be replaced with SQLFetch functionality
+            self.executor.dbname = code_block_db_name
+
+        # Stop any previous refresh operation and wait for child thread to die
+        self.refresher.stop_and_wait()
+
+        # Dispatch refresh sequence again
+        self.refresher.refresh()
+
+    # Sync with refresher to get an up-to-date SQLAnalyze object
+    def sync_data(self):
+        new_completer = self.refresher.wait_for_results()
+        self.completer.reset_completions(new_completer)
 
     def get_suggestions(self, code: str, cursor_pos: int):
+        self.sync_data()
+
         result = self.completer.get_completions(
             document=Document(text=code, cursor_position=cursor_pos),
             complete_event=None,

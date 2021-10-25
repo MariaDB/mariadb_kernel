@@ -73,16 +73,18 @@ class MariaDBKernel(Kernel):
         self.autocompleter = None
         self.introspector = None
         if self.client_config.autocompletion_enabled():
-            # try:
-            self.autocompleter = Autocompleter(
-                self.mariadb_client, self.client_config, self.log
-            )
-            self.introspector = Introspector()
-            # except:
-            # # Something went terribly wrong, disabling the feature
-            # self.log.error("Code completion functionalities were disabled due to an unexpected error")
-            # self.autocompleter = None
-            # self.introspector = None
+            try:
+                self.autocompleter = Autocompleter(
+                    self.mariadb_client, self.client_config, self.log
+                )
+                self.introspector = Introspector()
+            except:
+                # Something went terribly wrong, disabling the feature
+                self.log.error(
+                    "Code completion functionalities were disabled due to an unexpected error"
+                )
+                self.autocompleter = None
+                self.introspector = None
 
     def get_delimiter(self):
         return self.delimiter
@@ -154,7 +156,7 @@ class MariaDBKernel(Kernel):
         self._execute_magics(parser.get_magics())
 
         if self.autocompleter:
-            self.autocompleter.refresh(False)
+            self.autocompleter.refresh()
 
         return rv
 
