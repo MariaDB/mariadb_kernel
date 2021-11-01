@@ -49,8 +49,8 @@ class SqlFetch:
 
     def show_candidates(self):
         # show_candidates_query
-        show_candidates_query = """SELECT name from mysql.help_topic
-                                               WHERE name like "SHOW %";"""
+        show_candidates_query = """SELECT lower(name) from mysql.help_topic
+                                                      WHERE name like "SHOW %";"""
 
         # remove show prefix
         return [
@@ -76,9 +76,9 @@ class SqlFetch:
         # functions_query
         if self.dbname == "":
             return []
-        functions_query = """SELECT ROUTINE_NAME FROM INFORMATION_SCHEMA.ROUTINES
-                                                 WHERE ROUTINE_TYPE="FUNCTION"
-                                                       AND ROUTINE_SCHEMA = "%s";"""
+        functions_query = """SELECT lower(ROUTINE_NAME) FROM INFORMATION_SCHEMA.ROUTINES
+                                                        WHERE ROUTINE_TYPE="FUNCTION"
+                                                        AND ROUTINE_SCHEMA = "%s";"""
         return [
             (name,)
             for name in self.fetch_info(
@@ -116,10 +116,10 @@ class SqlFetch:
 
     def keywords(self) -> List[str]:
         # need consider no information_schema.keywords table
-        fetch_keywords_query = "select word from information_schema.keywords;"
+        fetch_keywords_query = "select lower(word) from information_schema.keywords;"
         try:
             result = self.fetch_info(
-                fetch_keywords_query, lambda df: list(df[0]["word"])
+                fetch_keywords_query, lambda df: list(df[0]["lower(word)"])
             )
             return list(filter(lambda ele: type(ele) is not float, result))
         except Exception as e:
@@ -127,10 +127,12 @@ class SqlFetch:
 
     def sql_functions(self) -> List[str]:
         # need consider no information_schema.keywords table
-        fetch_keywords_query = "select function from information_schema.sql_functions;"
+        fetch_keywords_query = (
+            "select lower(function) from information_schema.sql_functions;"
+        )
         try:
             result = self.fetch_info(
-                fetch_keywords_query, lambda df: list(df[0]["function"])
+                fetch_keywords_query, lambda df: list(df[0]["lower(function)"])
             )
             return list(filter(lambda ele: type(ele) is not float, result))
         except Exception as e:
@@ -146,9 +148,7 @@ class SqlFetch:
     #     database_tables_query = """select TABLE_SCHEMA, TABLE_NAME from information_schema.TABLES"""
     def database_tables(self):
         """Yields (database name, table name) pairs"""
-        database_tables_query = (
-            """select TABLE_SCHEMA, TABLE_NAME from information_schema.TABLES"""
-        )
+        database_tables_query = """select lower(TABLE_SCHEMA), lower(TABLE_NAME) from information_schema.TABLES"""
         result_html = self.mariadb_client.run_statement(database_tables_query)
         if self.mariadb_client.iserror():
             raise Exception(f"Client returned an error : {result_html}")
@@ -156,8 +156,8 @@ class SqlFetch:
             if result_html == "Query OK":
                 return []
             df = pandas.read_html(result_html)
-            database_name_list = list(df[0]["TABLE_SCHEMA"].values)
-            table_name_list = list(df[0]["TABLE_NAME"].values)
+            database_name_list = list(df[0]["lower(TABLE_SCHEMA)"].values)
+            table_name_list = list(df[0]["lower(TABLE_NAME)"].values)
             database_table_list = [
                 (database_name_list[i], table_name_list[i])
                 for i, _ in enumerate(database_name_list)
@@ -237,7 +237,7 @@ class SqlFetch:
         type: str
 
     def get_column_type_list(self, table: str, db: str) -> List[ColumnType]:
-        column_type_list_query = f"""SELECT COLUMN_NAME, COLUMN_TYPE
+        column_type_list_query = f"""SELECT lower(COLUMN_NAME), COLUMN_TYPE
                                      FROM INFORMATION_SCHEMA.COLUMNS
                                      WHERE
                                          TABLE_SCHEMA = '{db}' AND
@@ -254,7 +254,7 @@ class SqlFetch:
             column_type_list = []
             df = pandas.read_html(result_html)
             pandas_table = df[0]
-            for i, column_name in enumerate(pandas_table["COLUMN_NAME"]):
+            for i, column_name in enumerate(pandas_table["lower(COLUMN_NAME)"]):
                 column_type = ColumnType(column_name, pandas_table["COLUMN_TYPE"][i])
                 column_type_list.append(column_type)
             return column_type_list

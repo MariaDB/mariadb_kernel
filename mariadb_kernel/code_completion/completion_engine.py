@@ -13,6 +13,9 @@ suggestion_table_tuple = (
     "truncate",
     "desc",
     "explain",
+    "table",
+    "view",
+    "exists",
 )
 
 
@@ -76,14 +79,6 @@ def suggest_type(full_text, text_before_cursor):
         # The empty string
         statement = None
 
-    # Check for special commands and handle those separately
-    if statement:
-        # Be careful here because trivial whitespace is parsed as a statement,
-        # but the statement won't have a first token
-        tok1 = statement.token_first()
-        if tok1 and (tok1.value == "source" or tok1.value.startswith("\\")):
-            return suggest_special(text_before_cursor)
-
     last_token = statement and statement.token_prev(len(statement.tokens))[1] or ""
 
     # this is for database suggestion. Combined with a token after text cursor
@@ -134,35 +129,6 @@ def suggest_type(full_text, text_before_cursor):
     return suggest_based_on_last_token(
         last_token, text_before_cursor, full_text, identifier
     )
-
-
-def suggest_special(text):
-    text = text.lstrip()
-    cmd, _, arg = parse_special_command(text)
-
-    if cmd == text:
-        # Trying to complete the special command itself
-        return [{"type": "special"}]
-
-    if cmd in ("\\u", "\\r"):
-        return [{"type": "database"}]
-
-    if cmd in ("\\T"):
-        return [{"type": "table_format"}]
-
-    if cmd in ["\\f", "\\fs", "\\fd"]:
-        return [{"type": "favoritequery"}]
-
-    if cmd in ["\\dt", "\\dt+"]:
-        return [
-            {"type": "table", "schema": []},
-            {"type": "view", "schema": []},
-            {"type": "schema"},
-        ]
-    elif cmd in ["\\.", "source"]:
-        return [{"type": "file_name"}]
-
-    return [{"type": "keyword"}, {"type": "special"}]
 
 
 def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier):
@@ -289,14 +255,18 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
                 {"type": "view", "schema": parent},
                 {"type": "function", "schema": parent},
             ]
-        else:
-            aliases = [alias or table for (schema, table, alias) in tables]
-            return [
-                {"type": "column", "tables": tables},
-                {"type": "function", "schema": []},
-                {"type": "alias", "aliases": aliases},
-                {"type": "keyword"},
-            ]
+
+        rv = [
+            {"type": "column", "tables": tables},
+            {"type": "function", "schema": []},
+            {"type": "keyword"},
+        ]
+        if token_v == "select":
+            return rv
+
+        aliases = [alias or table for (schema, table, alias) in tables]
+        rv.append({"type": "alias", "aliases": aliases})
+        return rv
     elif (token_v.endswith("join") and token.is_keyword) or (
         token_v in suggestion_table_tuple
     ):
@@ -327,7 +297,7 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
         if schema:
             return [{"type": rel_type, "schema": schema}]
         else:
-            return [{"type": "schema"}, {"type": rel_type, "schema": []}]
+            return [{"type": rel_type, "schema": []}, {"type": "database"}]
     elif token_v == "on":
         tables = extract_tables(full_text)  # [(schema, table, alias), ...]
         parent = (identifier and identifier.get_parent_name()) or []

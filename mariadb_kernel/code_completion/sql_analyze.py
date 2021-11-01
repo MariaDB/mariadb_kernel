@@ -953,9 +953,7 @@ class SQLAnalyze(Completer):
 
     users = []
 
-    def __init__(
-        self, log, smart_completion=True, supported_formats=(), keyword_casing="auto"
-    ):
+    def __init__(self, log, smart_completion=True, supported_formats=()):
         self.smart_completion = smart_completion
         self.reserved_words = set()
         for x in self.keywords:
@@ -964,12 +962,9 @@ class SQLAnalyze(Completer):
 
         self.special_commands = []
         self.table_formats = supported_formats
-        if keyword_casing not in ("upper", "lower", "auto"):
-            keyword_casing = "auto"
-        self.keyword_casing = keyword_casing
         self.reset_completions()
-        self.set_keywords(default_keywords)
-        self.set_functions(default_functions)
+        self.set_keywords([k.lower() for k in default_keywords])
+        self.set_functions([f.lower() for f in default_functions])
         self.log = log
 
     # can't set empty list
@@ -1002,26 +997,6 @@ class SQLAnalyze(Completer):
     def set_functions(self, functions: List[str]):
         if len(functions) > 0:
             self.functions = functions
-
-    def escape_name(self, name):
-        if name and (
-            (not self.name_pattern.match(name))
-            or (name.upper() in self.reserved_words)
-            or (name.upper() in self.functions)
-        ):
-            name = "`%s`" % name
-
-        return name
-
-    def unescape_name(self, name):
-        """Unquote a string."""
-        if name and name[0] == '"' and name[-1] == '"':
-            name = name[1:-1]
-
-        return name
-
-    def escaped_names(self, names):
-        return [self.escape_name(name) for name in names]
 
     def extend_special_commands(self, special_commands):
         # Special commands are not part of all_completions since they can only
@@ -1068,14 +1043,6 @@ class SQLAnalyze(Completer):
         :param kind: either 'tables' or 'views'
         :return:
         """
-        # 'data' is a generator object. It can throw an exception while being
-        # consumed. This could happen if the user has launched the app without
-        # specifying a database name. This exception must be handled to prevent
-        # crashing.
-        try:
-            data = [self.escaped_names(d) for d in data]
-        except Exception:
-            data = []
 
         # dbmetadata['tables'][$schema_name][$table_name] should be a list of
         # column names. Default to an asterisk
@@ -1099,14 +1066,6 @@ class SQLAnalyze(Completer):
         :param kind: either 'tables' or 'views'
         :return:
         """
-        # 'column_data' is a generator object. It can throw an exception while
-        # being consumed. This could happen if the user has launched the app
-        # without specifying a database name. This exception must be handled to
-        # prevent crashing.
-        try:
-            column_data = [self.escaped_names(d) for d in column_data]
-        except Exception:
-            column_data = []
 
         metadata = self.dbmetadata[kind]
         for relname, column in column_data:
@@ -1114,15 +1073,6 @@ class SQLAnalyze(Completer):
             self.all_completions.add(column)
 
     def extend_functions(self, func_data):
-        # 'func_data' is a generator object. It can throw an exception while
-        # being consumed. This could happen if the user has launched the app
-        # without specifying a database name. This exception must be handled to
-        # prevent crashing.
-        try:
-            func_data = [self.escaped_names(d) for d in func_data]
-        except Exception:
-            func_data = []
-
         # dbmetadata['functions'][$schema_name][$function_name] should return
         # function metadata.
         metadata = self.dbmetadata["functions"]
@@ -1132,10 +1082,6 @@ class SQLAnalyze(Completer):
             self.all_completions.add(func[0])
 
     def extend_tables(self, table_data):
-        try:
-            table_data = [self.escaped_names(d) for d in table_data]
-        except Exception:
-            table_data = []
         for database, table in table_data:
             self.database_tables.append((database, table))
 
@@ -1171,7 +1117,7 @@ class SQLAnalyze(Completer):
             self.all_completions = set(self.keywords + self.functions)
 
     @staticmethod
-    def find_matches(text, collection, start_only=False, fuzzy=True, casing=None):
+    def find_matches(text, collection, start_only=False, fuzzy=True):
         """Find completion matches for the given text.
 
         Given the user's input text and a collection of available
@@ -1204,32 +1150,21 @@ class SQLAnalyze(Completer):
                 if match_point >= 0:
                     completions.append((len(text), match_point, item))
 
-        if casing == "auto":
-            casing = "lower" if last and last[-1].islower() else "upper"
-
-        def apply_case(kw):
-            if casing == "upper":
-                return kw.upper()
-            return kw.lower()
-
-        return (
-            Completion(z if casing is None else apply_case(z), -len(text))
-            for x, y, z in sorted(completions)
-        )
+        return (Completion(z, -len(text)) for x, y, z in sorted(completions))
 
     def extend_with_type(
         self, list: List, completions: Generator[Completion, None, None], type: str
     ):
-        new_comletion_list = []
+        new_completion_list = []
         for completion in completions:
-            new_comletion_list.append(
+            new_completion_list.append(
                 Completion(
                     text=completion.text,
                     start_position=completion.start_position,
                     display_meta=type,
                 )
             )
-        list.extend(new_comletion_list)
+        list.extend(new_completion_list)
 
     def get_completions(
         self, document, complete_event, executor: SqlFetch, smart_completion=None
@@ -1293,7 +1228,6 @@ class SQLAnalyze(Completer):
                         self.functions,
                         start_only=True,
                         fuzzy=False,
-                        casing=self.keyword_casing,
                     )
                     self.extend_with_type(
                         completions, predefined_funcs, suggestion["type"]
@@ -1331,7 +1265,8 @@ class SQLAnalyze(Completer):
                             map(
                                 lambda t: t[0],
                                 filter(
-                                    lambda t: t[1] == suggestion["table"],
+                                    lambda t: t[1].lower()
+                                    == suggestion["table"].lower(),
                                     self.database_tables,
                                 ),
                             )
@@ -1348,7 +1283,6 @@ class SQLAnalyze(Completer):
                     self.keywords,
                     start_only=True,
                     fuzzy=False,
-                    casing=self.keyword_casing,
                 )
                 self.extend_with_type(completions, keywords, suggestion["type"])
 
@@ -1358,7 +1292,6 @@ class SQLAnalyze(Completer):
                     self.show_items,
                     start_only=False,
                     fuzzy=True,
-                    casing=self.keyword_casing,
                 )
                 self.extend_with_type(completions, show_items, suggestion["type"])
 
@@ -1402,10 +1335,13 @@ class SQLAnalyze(Completer):
                 # scope can be both, global, session
                 # use set because global_variable would overlap with session_variable
                 variable_list = set()
+                scope = "system var"
                 if suggestion["scope"] == "global":
                     variable_list = {*variable_list, *self.global_variable}
+                    scope = "global"
                 elif suggestion["scope"] == "session":
                     variable_list = {*variable_list, *self.session_variable}
+                    scope = "session"
                 else:
                     variable_list = {
                         *variable_list,
@@ -1419,7 +1355,7 @@ class SQLAnalyze(Completer):
                     .replace("@@", "")
                 )
                 variables = self.find_matches(word, list(variable_list))
-                self.extend_with_type(completions, variables, suggestion["type"])
+                self.extend_with_type(completions, variables, scope)
 
         return completions
 
@@ -1447,10 +1383,8 @@ class SQLAnalyze(Completer):
 
         for tbl in scoped_tbls:
             # A fully qualified schema.relname reference or default_schema
-            # DO NOT escape schema names.
             schema = tbl[0] or self.dbname
             relname = tbl[1]
-            escaped_relname = self.escape_name(tbl[1])
 
             # We don't know if schema.relname is a table or view. Since
             # tables and views cannot share the same name, we can check one
@@ -1462,7 +1396,6 @@ class SQLAnalyze(Completer):
                 continue
             except KeyError:
                 try:
-                    columns.extend(meta["tables"][schema][escaped_relname])
                     # Table exists, so don't bother checking for a view
                     continue
                 except KeyError:
