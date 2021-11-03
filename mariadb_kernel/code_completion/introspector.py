@@ -303,7 +303,7 @@ class Introspector:
             elif word_type == "database":
                 if word:
                     tables_html = autocompleter.executor.get_tables_in_db_html(word)
-                    return f"{self.render_doc_header('database')}{self.get_left_alignment_table(tables_html)}"
+                    return f"{self.render_doc_header('Database')}{tables_html}"
                 else:
                     return f"{self.render_doc_header('database')}"
             elif word_type == "table":

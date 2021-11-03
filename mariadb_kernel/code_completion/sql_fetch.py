@@ -211,7 +211,7 @@ class SqlFetch:
             raise Exception(f"Client returned an error : {result_html}")
         if result_html == "Query OK":
             result_html = ""
-        return result_html
+        return self.mariadb_client.styled_result(result_html)
 
     def get_table_schema_html(self, table: str, db: str):
         table_schema_query = f"describe {db}.{table}"
