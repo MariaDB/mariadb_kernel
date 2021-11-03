@@ -232,7 +232,7 @@ class SqlFetch:
         return self.mariadb_client.styled_result(result_html)
 
     def get_column_type_html(self, column: str, table: str, db: str):
-        column_type_query = f"""SELECT COLUMN_TYPE
+        column_type_query = f"""SELECT COLUMN_TYPE as Datatype
                                 FROM INFORMATION_SCHEMA.COLUMNS
                                 WHERE
                                     TABLE_SCHEMA = '{db}' AND
@@ -243,7 +243,7 @@ class SqlFetch:
             raise Exception(f"Client returned an error : {result_html}")
         if result_html == "Query OK":
             result_html = ""
-        return result_html
+        return self.mariadb_client.styled_result(result_html)
 
     class ColumnType(NamedTuple):
         name: str
@@ -286,7 +286,7 @@ class SqlFetch:
             raise Exception(f"Client returned an error : {result_html}")
         if result_html == "Query OK":
             result_html = ""
-        return result_html
+        return self.mariadb_client.styled_result(result_html)
 
     def get_specific_table_columns_list(self, table: str, db: str):
         column_query = f"explain {db}.{table}"

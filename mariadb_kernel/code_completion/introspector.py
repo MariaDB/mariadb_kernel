@@ -264,15 +264,6 @@ class Introspector:
         ]:
             return {"word": word, "type": "keyword"}
 
-    def get_left_alignment_table(self, html: str):
-        soup = BeautifulSoup(html, "html.parser")
-        table = soup.find("table")
-        if table and type(table) is Tag:
-            table["style"] = "margin-left: 0"
-            return str(table)
-        else:
-            return html
-
     def render_doc_header(self, name: str):
         return f"<h2 style='color: #0045ad'>{name}</h2>"
 
@@ -334,10 +325,10 @@ class Introspector:
                     column_rows_html = autocompleter.executor.get_column_row_html(
                         word, table_name, db_name, limit_num
                     )
-                    return f"""{self.render_doc_header('column')}
-                               {self.get_left_alignment_table(column_html)}<br/>
-                               <b>first {limit_num} row of the column {word}</b><br/>
-                               {self.get_left_alignment_table(column_rows_html)}"""
+                    return f"""{self.render_doc_header('Column')}
+                               {column_html}<br/>
+                               <b>First {limit_num} rows of the {word} column</b><br/>
+                               {column_rows_html}"""
                 else:
                     return f"{self.render_doc_header('column')}"
             elif word_type == "column_hint":
