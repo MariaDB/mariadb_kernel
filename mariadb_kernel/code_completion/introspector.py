@@ -33,33 +33,35 @@ def convert_help_text_to_beautiful_html(text):
 
     regex_for_header = r"^Name:.+\nDescription:"
     result = re.sub(regex_for_header, "", result, flags=re.MULTILINE | re.IGNORECASE)
-    header_style = "style='margin: 0'"
-    regex_for_syntax_header = r"^Syntax:"
+    header_style = "style='color:#0045ad;margin:0'"
+    regex_for_syntax_header = r"^Syntax"
     result = re.sub(
         regex_for_syntax_header,
-        f"<h2 {header_style}>Syntax</h2>",
+        f"<h3 {header_style}>Syntax</h3>",
         result,
         flags=re.MULTILINE | re.IGNORECASE,
     )
-    regex_for_examples_header = r"^Examples:"
+    regex_for_description_header = r"^Description"
+    result = re.sub(
+        regex_for_description_header,
+        f"<h3 {header_style}>Description</h3>",
+        result,
+        flags=re.MULTILINE | re.IGNORECASE,
+    )
+
+    regex_for_examples_header = r"^Examples"
     result = re.sub(
         regex_for_examples_header,
-        f"<h2 {header_style}>Example</h2>",
+        f"<h3 {header_style}>Examples</h3>",
         result,
         flags=re.MULTILINE | re.IGNORECASE,
     )
-    regex_for_mariadb_command = r"(Mariadb>)(.+[;,])"
-    result = re.sub(
-        regex_for_mariadb_command,
-        r"<b>\1</b><code>\2</code>",
-        result,
-        flags=re.MULTILINE | re.IGNORECASE,
-    )
-    regex_for_right_arrow = r"->"
-    result = re.sub(
-        regex_for_right_arrow, "&rarr;", result, flags=re.MULTILINE | re.IGNORECASE
-    )
+
+    regex_for_dashes = r"^[-]+"
+    result = re.sub(regex_for_dashes, "", result, flags=re.MULTILINE)
+
     result = result.replace("\n\n", "\n").lstrip("\n").replace("\n", "<br/>")
+
     return result
 
 
@@ -289,7 +291,7 @@ class Introspector:
                     doc = autocompleter.executor.get_help_text(word)
                     # convert text to html and beautify doc
                     doc = convert_help_text_to_beautiful_html(doc)
-                    return f"{self.render_doc_header('function')}{''.join(doc)}"
+                    return f"{self.render_doc_header('Function')}{''.join(doc)}"
                 return f"{self.render_doc_header('function')}"
             elif word_type == "database":
                 if word:
