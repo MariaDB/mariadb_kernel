@@ -14,20 +14,28 @@ class SqlFetch:
         self.log = log
         self.update_db_name()
 
-    def fetch_info(self, query: str, function: Callable[[List[DataFrame]], List]):
+    def fetch_info(
+        self, query: str, function: Callable[[List[DataFrame]], List], html=False
+    ):
         result_html = self.mariadb_client.run_statement(query)
+        rv = None
         if self.mariadb_client.iserror():
             raise Exception(f"Client returned an error : {result_html}")
         try:
             if result_html == "Query OK":
-                str_list = []
+                if html:
+                    rv = ""
+                else:
+                    rv = []
+            elif html:
+                rv = result_html
             else:
                 df = pandas.read_html(result_html)
-                str_list = function(df)
+                rv = function(df)
         except Exception:
             self.log.error(f"Pandas failed to parse html : {result_html}")
             raise
-        return str_list
+        return rv
 
     def databases(self) -> List[str]:
         databases_query = """SHOW DATABASES;"""
@@ -61,10 +69,15 @@ class SqlFetch:
             )
         ]
 
-    def users(self):
+    def users(self, html=False):
         # users_query
-        users_query = """SELECT CONCAT("'", user, "'@'",host,"'")
+        users_query = """SELECT CONCAT("'", user, "'@'",host,"'") as All_Users
                                 FROM mysql.user;"""
+
+        if html:
+            users = self.fetch_info(users_query, None, html=True)
+            return self.mariadb_client.styled_result(users)
+
         return [
             (name,)
             for name in self.fetch_info(

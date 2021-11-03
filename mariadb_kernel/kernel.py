@@ -18,7 +18,6 @@ from .code_completion.introspector import Introspector
 
 import logging
 import pandas
-from bs4 import BeautifulSoup
 import os
 import signal
 
@@ -104,17 +103,6 @@ class MariaDBKernel(Kernel):
         df = pandas.read_html(result_html)
         self.data["last_select"] = df[0]
 
-    def _styled_result(self, result_html):
-        if not result_html or not result_html.startswith("<TABLE"):
-            return result_html
-
-        soup = BeautifulSoup(result_html)
-        cells = soup.find_all(["td", "th"])
-        for cell in cells:
-            cell["style"] = "text-align:left;white-space:pre"
-
-        return str(soup)
-
     def _send_message(self, stream, message):
         error = {"name": stream, "text": message + "\n"}
         self.send_response(self.iopub_socket, "stream", error)
@@ -148,7 +136,9 @@ class MariaDBKernel(Kernel):
             result_str = str(result)
             if not silent:
                 display_content = {
-                    "data": {"text/html": self._styled_result(result_str)},
+                    "data": {
+                        "text/html": self.mariadb_client.styled_result(result_str)
+                    },
                     "metadata": {},
                 }
                 self.send_response(self.iopub_socket, "display_data", display_content)

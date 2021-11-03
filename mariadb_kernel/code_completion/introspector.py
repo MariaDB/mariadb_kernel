@@ -291,10 +291,7 @@ class Introspector:
                 if word:
                     if word == "user":
                         # would show all user list
-                        users = autocompleter.executor.users()
-                        user_list_text = [user[0] for user in users]
-                        users_text = "<br/>".join(user_list_text)
-                        return f"<h2>all user list : </h2>{users_text}"
+                        return autocompleter.executor.users(html=True)
                 return None
             elif word_type == "function":
                 if word:

@@ -14,7 +14,6 @@ suggestion_table_tuple = (
     "desc",
     "explain",
     "table",
-    "view",
     "exists",
 )
 

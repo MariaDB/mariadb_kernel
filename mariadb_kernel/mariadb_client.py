@@ -7,6 +7,7 @@ from pexpect import replwrap, EOF, TIMEOUT, ExceptionPexpect
 from pathlib import Path
 import re
 from uuid import uuid1
+from bs4 import BeautifulSoup
 
 
 class MariaREPL(replwrap.REPLWrapper):
@@ -134,6 +135,17 @@ class MariaDBClient:
 
         self.error = False
         return result
+
+    def styled_result(self, result_html):
+        if not result_html or not result_html.startswith("<TABLE"):
+            return result_html
+
+        soup = BeautifulSoup(result_html)
+        cells = soup.find_all(["td", "th"])
+        for cell in cells:
+            cell["style"] = "text-align:left;white-space:pre"
+
+        return str(soup)
 
 
 class ServerIsDownError(Exception):
