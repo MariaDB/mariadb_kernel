@@ -220,7 +220,7 @@ class SqlFetch:
             raise Exception(f"Client returned an error : {result_html}")
         if result_html == "Query OK":
             result_html = ""
-        return result_html
+        return self.mariadb_client.styled_result(result_html)
 
     def get_partial_table_row_html(self, table: str, db: str, limit: int = 5):
         table_rows_query = f"select * from {db}.{table} limit {limit}"
@@ -229,7 +229,7 @@ class SqlFetch:
             raise Exception(f"Client returned an error : {result_html}")
         if result_html == "Query OK":
             result_html = ""
-        return result_html
+        return self.mariadb_client.styled_result(result_html)
 
     def get_column_type_html(self, column: str, table: str, db: str):
         column_type_query = f"""SELECT COLUMN_TYPE

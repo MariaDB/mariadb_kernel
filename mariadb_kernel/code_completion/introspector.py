@@ -316,10 +316,11 @@ class Introspector:
                     table_rows_html = autocompleter.executor.get_partial_table_row_html(
                         word, db_name, limit_num
                     )
-                    return f"""{self.render_doc_header('table')}
-                               {self.get_left_alignment_table(table_html)}
-                               <b>first {limit_num} row of the table {word}</b><br/>
-                               {self.get_left_alignment_table(table_rows_html)}"""
+                    return f"""{self.render_doc_header('Table')}
+                               <b>First {limit_num} rows of the {word} table</b><br/>
+                               {table_rows_html}
+                               <b>Table Schema</b><br/>
+                               {table_html}"""
                 else:
                     return f"{self.render_doc_header('table')}"
             elif word_type == "column":

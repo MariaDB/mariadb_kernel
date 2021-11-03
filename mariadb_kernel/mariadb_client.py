@@ -145,6 +145,9 @@ class MariaDBClient:
         for cell in cells:
             cell["style"] = "text-align:left;white-space:pre"
 
+        table = soup.find("table")
+        table["style"] = "margin-left: 0"
+
         return str(soup)
 
 
