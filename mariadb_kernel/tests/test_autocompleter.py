@@ -1,9 +1,9 @@
 from typing import List, Type
 
 from prompt_toolkit.completion.base import Completion
-from ..kernel import MariadbClientManagager
 
 from ..mariadb_server import MariaDBServer
+from ..mariadb_client import MariaDBClient
 from ..client_config import ClientConfig
 
 from unittest.mock import Mock
@@ -31,11 +31,11 @@ def test_mariadb_autocompleter_keywords_suggestion(mariadb_server: Type[MariaDBS
 
     mariadb_server(mocklog, cfg)
 
-    manager = MariadbClientManagager(mocklog, cfg)
-    client = manager.client_for_code_block
-    manager.start()
-    client.run_statement("use test;")
-    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
+    codeblock_client = MariaDBClient(mocklog, cfg)
+    codeblock_client.start()
+    codeblock_client.run_statement("use test;")
+    autocompleter = Autocompleter(codeblock_client, cfg, mocklog)
+
     assert set(["select"]).issubset(
         get_text_list(autocompleter.get_suggestions("sel", 3))
     )
@@ -49,11 +49,11 @@ def test_mariadb_autocompleter_default_functions_suggestion(
 
     mariadb_server(mocklog, cfg)
 
-    manager = MariadbClientManagager(mocklog, cfg)
-    client = manager.client_for_code_block
-    manager.start()
-    client.run_statement("use test;")
-    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
+    codeblock_client = MariaDBClient(mocklog, cfg)
+    codeblock_client.start()
+    codeblock_client.run_statement("use test;")
+    autocompleter = Autocompleter(codeblock_client, cfg, mocklog)
+
     assert set(autocompleter.completer.functions).issubset(
         get_text_list(autocompleter.get_suggestions("select ", 7))
     )
@@ -67,11 +67,11 @@ def test_mariadb_autocompleter_database_suggestion_after_use(
 
     mariadb_server(mocklog, cfg)
 
-    manager = MariadbClientManagager(mocklog, cfg)
-    client = manager.client_for_code_block
-    manager.start()
-    client.run_statement("use test;")
-    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
+    codeblock_client = MariaDBClient(mocklog, cfg)
+    codeblock_client.start()
+    codeblock_client.run_statement("use test;")
+    autocompleter = Autocompleter(codeblock_client, cfg, mocklog)
+
     assert set(["information_schema", "mysql", "performance_schema", "test"]).issubset(
         get_text_list(autocompleter.get_suggestions("use ", 4))
     )
@@ -85,18 +85,17 @@ def test_mariadb_autocompleter_table_suggestion_under_database_by_dot(
 
     mariadb_server(mocklog, cfg)
 
-    manager = MariadbClientManagager(mocklog, cfg)
-    client = manager.client_for_code_block
-    manager.start()
-    client.run_statement("use test;")
-    client.run_statement("create table t1 (a int, b int, c int);")
-    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
+    codeblock_client = MariaDBClient(mocklog, cfg)
+    codeblock_client.start()
+    codeblock_client.run_statement("use test;")
+    codeblock_client.run_statement("create table t1 (a int, b int, c int);")
+    autocompleter = Autocompleter(codeblock_client, cfg, mocklog)
 
     assert set(["t1"]).issubset(
         get_text_list(autocompleter.get_suggestions("insert into test.", 17))
     )
 
-    client.run_statement("drop table t1;")
+    codeblock_client.run_statement("drop table t1;")
 
 
 def test_mariadb_autocompleter_column_suggestion_after_where(
@@ -107,18 +106,17 @@ def test_mariadb_autocompleter_column_suggestion_after_where(
 
     mariadb_server(mocklog, cfg)
 
-    manager = MariadbClientManagager(mocklog, cfg)
-    client = manager.client_for_code_block
-    manager.start()
-    client.run_statement("use test;")
-    client.run_statement("create table t1 (a int, b int, c int);")
-    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
+    codeblock_client = MariaDBClient(mocklog, cfg)
+    codeblock_client.start()
+    codeblock_client.run_statement("use test;")
+    codeblock_client.run_statement("create table t1 (a int, b int, c int);")
+    autocompleter = Autocompleter(codeblock_client, cfg, mocklog)
 
     assert set(["t1"]).issubset(
         get_text_list(autocompleter.get_suggestions("select * from t1 where ", 23))
     )
 
-    client.run_statement("drop table t1;")
+    codeblock_client.run_statement("drop table t1;")
 
 
 def test_mariadb_autocompleter_column_suggestion_insert_into_clause(
@@ -129,19 +127,18 @@ def test_mariadb_autocompleter_column_suggestion_insert_into_clause(
 
     mariadb_server(mocklog, cfg)
 
-    manager = MariadbClientManagager(mocklog, cfg)
-    client = manager.client_for_code_block
-    manager.start()
-    client.run_statement("use test;")
-    client.run_statement("create table t1 (a int, b int, c int);")
-    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
+    codeblock_client = MariaDBClient(mocklog, cfg)
+    codeblock_client.start()
+    codeblock_client.run_statement("use test;")
+    codeblock_client.run_statement("create table t1 (a int, b int, c int);")
+    autocompleter = Autocompleter(codeblock_client, cfg, mocklog)
 
     unittest.TestCase().assertListEqual(
         ["*", "a", "b", "c"],
         get_text_list(autocompleter.get_suggestions("insert into t1 (", 16)),
     )
 
-    client.run_statement("drop table t1;")
+    codeblock_client.run_statement("drop table t1;")
 
 
 def test_mariadb_autocompleter_column_suggestion_by_table_aliase(
@@ -152,19 +149,18 @@ def test_mariadb_autocompleter_column_suggestion_by_table_aliase(
 
     mariadb_server(mocklog, cfg)
 
-    manager = MariadbClientManagager(mocklog, cfg)
-    client = manager.client_for_code_block
-    manager.start()
-    client.run_statement("use test;")
-    client.run_statement("create table t1 (a int, b int, c int);")
-    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
+    codeblock_client = MariaDBClient(mocklog, cfg)
+    codeblock_client.start()
+    codeblock_client.run_statement("use test;")
+    codeblock_client.run_statement("create table t1 (a int, b int, c int);")
+    autocompleter = Autocompleter(codeblock_client, cfg, mocklog)
 
     unittest.TestCase().assertListEqual(
         ["*", "a", "b", "c"],
         get_text_list(autocompleter.get_suggestions("select t. from t1 as t", 9)),
     )
 
-    client.run_statement("drop table t1;")
+    codeblock_client.run_statement("drop table t1;")
 
 
 def test_mariadb_autocompleter_show_variant_suggestion(
@@ -175,22 +171,20 @@ def test_mariadb_autocompleter_show_variant_suggestion(
 
     mariadb_server(mocklog, cfg)
 
-    manager = MariadbClientManagager(mocklog, cfg)
-    client = manager.client_for_code_block
-    manager.start()
-    client.run_statement("use test;")
-    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
+    codeblock_client = MariaDBClient(mocklog, cfg)
+    codeblock_client.start()
+    codeblock_client.run_statement("use test;")
+    autocompleter = Autocompleter(codeblock_client, cfg, mocklog)
 
     # not complete
     assert set(
         [
-            "AUTHORS",
-            "BINARY LOGS",
-            "BINLOG EVENTS",
-            "CHARACTER SET",
-            "COLLATION",
-            "COLUMNS",
-            "CONTRIBUTORS",
+            "authors",
+            "binary logs",
+            "binlog events",
+            "character set",
+            "collation",
+            "contributors",
         ]
     ).issubset(get_text_list(autocompleter.get_suggestions("SHOW ", 5)))
 
@@ -203,12 +197,11 @@ def test_mariadb_autocompleter_username_at_hostname_suggestion(
 
     mariadb_server(mocklog, cfg)
 
-    manager = MariadbClientManagager(mocklog, cfg)
-    client = manager.client_for_code_block
-    manager.start()
-    client.run_statement("use test;")
-    client.run_statement("create user foo2@test IDENTIFIED BY 'password';")
-    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
+    codeblock_client = MariaDBClient(mocklog, cfg)
+    codeblock_client.start()
+    codeblock_client.run_statement("use test;")
+    codeblock_client.run_statement("create user foo2@test IDENTIFIED BY 'password';")
+    autocompleter = Autocompleter(codeblock_client, cfg, mocklog)
 
     # not complete
     assert set(
@@ -218,7 +211,7 @@ def test_mariadb_autocompleter_username_at_hostname_suggestion(
         ]
     ).issubset(get_text_list(autocompleter.get_suggestions("ALTER USER ", 11)))
 
-    client.run_statement("drop foo2@test;")
+    codeblock_client.run_statement("drop foo2@test;")
 
 
 def test_mariadb_autocompleter_database_before_table_name(
@@ -229,18 +222,17 @@ def test_mariadb_autocompleter_database_before_table_name(
 
     mariadb_server(mocklog, cfg)
 
-    manager = MariadbClientManagager(mocklog, cfg)
-    client = manager.client_for_code_block
-    manager.start()
-    client.run_statement("create database d1;")
-    client.run_statement("use d1;")
-    client.run_statement("create table t1(a int, b int);")
-    client.run_statement("create table t2(a int, b int);")
-    client.run_statement("create database d2;")
-    client.run_statement("use d2;")
-    client.run_statement("create table haha1(a int, b int);")
-    client.run_statement("create table haha2(a int, b int);")
-    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
+    codeblock_client = MariaDBClient(mocklog, cfg)
+    codeblock_client.start()
+    codeblock_client.run_statement("create database d1;")
+    codeblock_client.run_statement("use d1;")
+    codeblock_client.run_statement("create table t1(a int, b int);")
+    codeblock_client.run_statement("create table t2(a int, b int);")
+    codeblock_client.run_statement("create database d2;")
+    codeblock_client.run_statement("use d2;")
+    codeblock_client.run_statement("create table haha1(a int, b int);")
+    codeblock_client.run_statement("create table haha2(a int, b int);")
+    autocompleter = Autocompleter(codeblock_client, cfg, mocklog)
     autocompleter.refresh()
 
     unittest.TestCase().assertListEqual(
@@ -250,8 +242,8 @@ def test_mariadb_autocompleter_database_before_table_name(
         ),
     )
 
-    client.run_statement("drop database d1;")
-    client.run_statement("drop database d2;")
+    codeblock_client.run_statement("drop database d1;")
+    codeblock_client.run_statement("drop database d2;")
 
 
 def test_mariadb_autocompleter_database_before_table_name_under_emtpy_table_name(
@@ -262,18 +254,17 @@ def test_mariadb_autocompleter_database_before_table_name_under_emtpy_table_name
 
     mariadb_server(mocklog, cfg)
 
-    manager = MariadbClientManagager(mocklog, cfg)
-    client = manager.client_for_code_block
-    manager.start()
-    client.run_statement("create database d1;")
-    client.run_statement("use d1;")
-    client.run_statement("create table t1(a int, b int);")
-    client.run_statement("create table t2(a int, b int);")
-    client.run_statement("create database d2;")
-    client.run_statement("use d2;")
-    client.run_statement("create table haha1(a int, b int);")
-    client.run_statement("create table haha2(a int, b int);")
-    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
+    codeblock_client = MariaDBClient(mocklog, cfg)
+    codeblock_client.start()
+    codeblock_client.run_statement("create database d1;")
+    codeblock_client.run_statement("use d1;")
+    codeblock_client.run_statement("create table t1(a int, b int);")
+    codeblock_client.run_statement("create table t2(a int, b int);")
+    codeblock_client.run_statement("create database d2;")
+    codeblock_client.run_statement("use d2;")
+    codeblock_client.run_statement("create table haha1(a int, b int);")
+    codeblock_client.run_statement("create table haha2(a int, b int);")
+    autocompleter = Autocompleter(codeblock_client, cfg, mocklog)
     autocompleter.refresh()
 
     set(["d1", "d2"]).issubset(
@@ -282,8 +273,8 @@ def test_mariadb_autocompleter_database_before_table_name_under_emtpy_table_name
         ),
     )
 
-    client.run_statement("drop database d1;")
-    client.run_statement("drop database d2;")
+    codeblock_client.run_statement("drop database d1;")
+    codeblock_client.run_statement("drop database d2;")
 
 
 def test_mariadb_autocompleter_database_before_table_name_under_partial_database_name(
@@ -294,18 +285,17 @@ def test_mariadb_autocompleter_database_before_table_name_under_partial_database
 
     mariadb_server(mocklog, cfg)
 
-    manager = MariadbClientManagager(mocklog, cfg)
-    client = manager.client_for_code_block
-    manager.start()
-    client.run_statement("create database da1;")
-    client.run_statement("use da1;")
-    client.run_statement("create table t1(a int, b int);")
-    client.run_statement("create table t2(a int, b int);")
-    client.run_statement("create database db2;")
-    client.run_statement("use db2;")
-    client.run_statement("create table haha1(a int, b int);")
-    client.run_statement("create table haha2(a int, b int);")
-    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
+    codeblock_client = MariaDBClient(mocklog, cfg)
+    codeblock_client.start()
+    codeblock_client.run_statement("create database da1;")
+    codeblock_client.run_statement("use da1;")
+    codeblock_client.run_statement("create table t1(a int, b int);")
+    codeblock_client.run_statement("create table t2(a int, b int);")
+    codeblock_client.run_statement("create database db2;")
+    codeblock_client.run_statement("use db2;")
+    codeblock_client.run_statement("create table haha1(a int, b int);")
+    codeblock_client.run_statement("create table haha2(a int, b int);")
+    autocompleter = Autocompleter(codeblock_client, cfg, mocklog)
     autocompleter.refresh()
 
     unittest.TestCase().assertListEqual(
@@ -314,8 +304,8 @@ def test_mariadb_autocompleter_database_before_table_name_under_partial_database
             autocompleter.get_suggestions("insert into da.", len("insert into da"))
         ),
     )
-    client.run_statement("drop database da1;")
-    client.run_statement("drop database db2;")
+    codeblock_client.run_statement("drop database da1;")
+    codeblock_client.run_statement("drop database db2;")
 
 
 def test_mariadb_autocompleter_database_with_select_statement(
@@ -326,12 +316,11 @@ def test_mariadb_autocompleter_database_with_select_statement(
 
     mariadb_server(mocklog, cfg)
 
-    manager = MariadbClientManagager(mocklog, cfg)
-    client = manager.client_for_code_block
-    manager.start()
-    client.run_statement("create database d1;")
-    client.run_statement("use d1;")
-    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
+    codeblock_client = MariaDBClient(mocklog, cfg)
+    codeblock_client.start()
+    codeblock_client.run_statement("create database d1;")
+    codeblock_client.run_statement("use d1;")
+    autocompleter = Autocompleter(codeblock_client, cfg, mocklog)
     autocompleter.refresh()
 
     unittest.TestCase().assertListEqual(
@@ -342,7 +331,7 @@ def test_mariadb_autocompleter_database_with_select_statement(
             )
         ),
     )
-    client.run_statement("drop database d1;")
+    codeblock_client.run_statement("drop database d1;")
 
 
 def test_mariadb_autocompleter_database_with_describe_statement(
@@ -353,12 +342,11 @@ def test_mariadb_autocompleter_database_with_describe_statement(
 
     mariadb_server(mocklog, cfg)
 
-    manager = MariadbClientManagager(mocklog, cfg)
-    client = manager.client_for_code_block
-    manager.start()
-    client.run_statement("create database d1;")
-    client.run_statement("use d1;")
-    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
+    codeblock_client = MariaDBClient(mocklog, cfg)
+    codeblock_client.start()
+    codeblock_client.run_statement("create database d1;")
+    codeblock_client.run_statement("use d1;")
+    autocompleter = Autocompleter(codeblock_client, cfg, mocklog)
     autocompleter.refresh()
 
     unittest.TestCase().assertListEqual(
@@ -367,7 +355,7 @@ def test_mariadb_autocompleter_database_with_describe_statement(
             autocompleter.get_suggestions("describe mysq", len("describe mysq"))
         ),
     )
-    client.run_statement("drop database d1;")
+    codeblock_client.run_statement("drop database d1;")
 
 
 def test_mariadb_autocompleter_variables_suggestion_with_empty_text(
@@ -378,10 +366,9 @@ def test_mariadb_autocompleter_variables_suggestion_with_empty_text(
 
     mariadb_server(mocklog, cfg)
 
-    manager = MariadbClientManagager(mocklog, cfg)
-    client = manager.client_for_code_block
-    manager.start()
-    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
+    codeblock_client = MariaDBClient(mocklog, cfg)
+    codeblock_client.start()
+    autocompleter = Autocompleter(codeblock_client, cfg, mocklog)
     autocompleter.refresh()
 
     # check no duplicate
@@ -421,10 +408,9 @@ def test_mariadb_autocompleter_variables_suggestion_with_some_text(
 
     mariadb_server(mocklog, cfg)
 
-    manager = MariadbClientManagager(mocklog, cfg)
-    client = manager.client_for_code_block
-    manager.start()
-    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
+    codeblock_client = MariaDBClient(mocklog, cfg)
+    codeblock_client.start()
+    autocompleter = Autocompleter(codeblock_client, cfg, mocklog)
     autocompleter.refresh()
 
     # jsut test part of variable
@@ -459,11 +445,11 @@ def test_mariadb_autocompleter_global_variables_suggestion(
 
     mariadb_server(mocklog, cfg)
 
-    manager = MariadbClientManagager(mocklog, cfg)
-    client = manager.client_for_code_block
-    manager.start()
-    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
+    codeblock_client = MariaDBClient(mocklog, cfg)
+    codeblock_client.start()
+    autocompleter = Autocompleter(codeblock_client, cfg, mocklog)
     autocompleter.refresh()
+
     # jsut test part of variable
     unittest.TestCase().assertListEqual(
         ["report_host"],
@@ -483,11 +469,11 @@ def test_mariadb_autocompleter_global_variables_no_session_variable(
 
     mariadb_server(mocklog, cfg)
 
-    manager = MariadbClientManagager(mocklog, cfg)
-    client = manager.client_for_code_block
-    manager.start()
-    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
+    codeblock_client = MariaDBClient(mocklog, cfg)
+    codeblock_client.start()
+    autocompleter = Autocompleter(codeblock_client, cfg, mocklog)
     autocompleter.refresh()
+
     # jsut test part of variable
     unittest.TestCase().assertNotIn(
         "error_count",
@@ -505,11 +491,11 @@ def test_mariadb_autocompleter_global_variables_no_session_variable_with_text(
 
     mariadb_server(mocklog, cfg)
 
-    manager = MariadbClientManagager(mocklog, cfg)
-    client = manager.client_for_code_block
-    manager.start()
-    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
+    codeblock_client = MariaDBClient(mocklog, cfg)
+    codeblock_client.start()
+    autocompleter = Autocompleter(codeblock_client, cfg, mocklog)
     autocompleter.refresh()
+
     # jsut test part of variable
     unittest.TestCase().assertNotIn(
         "error_count",
@@ -529,16 +515,19 @@ def test_mariadb_autocompleter_multi_mariadb_client_selected_database_sync(
 
     mariadb_server(mocklog, cfg)
 
-    manager = MariadbClientManagager(mocklog, cfg)
-    client = manager.client_for_code_block
-    manager.start()
-    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
-    client.run_statement("create database db1;")
-    client.run_statement("use db1;")
+    codeblock_client = MariaDBClient(mocklog, cfg)
+    codeblock_client.start()
+    codeblock_client.run_statement("create database db1;")
+    codeblock_client.run_statement("use db1;")
+    autocompleter = Autocompleter(codeblock_client, cfg, mocklog)
     autocompleter.refresh()
-    assert manager.client_for_autocompleter.run_statement(
+    # avoid race condition on the same client from
+    # refreshing thread and test thread
+    autocompleter.sync_data()
+
+    assert autocompleter.completion_mariadb_client.run_statement(
         "SELECT DATABASE();"
-    ) == manager.client_for_code_block.run_statement("SELECT DATABASE();")
+    ) == codeblock_client.run_statement("SELECT DATABASE();")
 
 
 def test_mariadb_autocompleter_column_suggest_for_system_table(
@@ -549,13 +538,13 @@ def test_mariadb_autocompleter_column_suggest_for_system_table(
 
     mariadb_server(mocklog, cfg)
 
-    manager = MariadbClientManagager(mocklog, cfg)
-    client = manager.client_for_code_block
-    manager.start()
-    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
-    client.run_statement("create database db1;")
-    client.run_statement("use db1;")
+    codeblock_client = MariaDBClient(mocklog, cfg)
+    codeblock_client.start()
+    codeblock_client.run_statement("create database db1;")
+    codeblock_client.run_statement("use db1;")
+    autocompleter = Autocompleter(codeblock_client, cfg, mocklog)
     autocompleter.refresh()
+
     assert ["Password", "password_expired"] == get_text_list_by_type(
         autocompleter.get_suggestions(
             "select user, Passwor from mysql.user;", len("select user, Passwor")
@@ -572,13 +561,13 @@ def test_mariadb_autocompleter_column_suggest_for_system_table_2(
 
     mariadb_server(mocklog, cfg)
 
-    manager = MariadbClientManagager(mocklog, cfg)
-    client = manager.client_for_code_block
-    manager.start()
-    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
-    client.run_statement("create database db1;")
-    client.run_statement("use db1;")
+    codeblock_client = MariaDBClient(mocklog, cfg)
+    codeblock_client.start()
+    codeblock_client.run_statement("create database db1;")
+    codeblock_client.run_statement("use db1;")
+    autocompleter = Autocompleter(codeblock_client, cfg, mocklog)
     autocompleter.refresh()
+
     assert ["Select_priv"] == get_text_list_by_type(
         autocompleter.get_suggestions(
             "select user, password, Select_priv from mysql.user;",
@@ -596,13 +585,13 @@ def test_mariadb_autocompleter_actively_fetch_system_table_columns(
 
     mariadb_server(mocklog, cfg)
 
-    manager = MariadbClientManagager(mocklog, cfg)
-    client = manager.client_for_code_block
-    manager.start()
-    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
-    client.run_statement("create database db1;")
-    client.run_statement("use db1;")
+    codeblock_client = MariaDBClient(mocklog, cfg)
+    codeblock_client.start()
+    codeblock_client.run_statement("create database db1;")
+    codeblock_client.run_statement("use db1;")
+    autocompleter = Autocompleter(codeblock_client, cfg, mocklog)
     autocompleter.refresh()
+
     assert ["TABLE_NAME"] == get_text_list_by_type(
         autocompleter.get_suggestions(
             "select TABLE_NAM from information_schema.TABLES;", len("select TABLE_NAM")
@@ -626,23 +615,23 @@ def test_mariadb_autocompleter_suggest_the_table_not_under_current_selected_data
 
     mariadb_server(mocklog, cfg)
 
-    manager = MariadbClientManagager(mocklog, cfg)
-    client = manager.client_for_code_block
-    manager.start()
-    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
-    client.run_statement("create database d1;")
-    client.run_statement("create database d2;")
-    client.run_statement("use d1;")
-    client.run_statement("create table tabl(u int);")
-    client.run_statement("use d2;")
-    client.run_statement("create table tabl(u int);")
-    client.run_statement("use d1;")
+    codeblock_client = MariaDBClient(mocklog, cfg)
+    codeblock_client.start()
+    codeblock_client.run_statement("create database d1;")
+    codeblock_client.run_statement("create database d2;")
+    codeblock_client.run_statement("use d1;")
+    codeblock_client.run_statement("create table tabl(u int);")
+    codeblock_client.run_statement("use d2;")
+    codeblock_client.run_statement("create table tabl(u int);")
+    codeblock_client.run_statement("use d1;")
+    autocompleter = Autocompleter(codeblock_client, cfg, mocklog)
     autocompleter.refresh()
+
     assert expected == get_text_list(
         autocompleter.get_suggestions(code, code_pos),
     )
-    client.run_statement("drop database d1;")
-    client.run_statement("drop database d2;")
+    codeblock_client.run_statement("drop database d1;")
+    codeblock_client.run_statement("drop database d2;")
 
 
 def test_mariadb_autocompleter_suggest_keyword_after_user_column(
@@ -653,17 +642,17 @@ def test_mariadb_autocompleter_suggest_keyword_after_user_column(
 
     mariadb_server(mocklog, cfg)
 
-    manager = MariadbClientManagager(mocklog, cfg)
-    client = manager.client_for_code_block
-    manager.start()
-    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
-    client.run_statement("create database d1;")
-    client.run_statement("use d1;")
+    codeblock_client = MariaDBClient(mocklog, cfg)
+    codeblock_client.start()
+    codeblock_client.run_statement("create database d1;")
+    codeblock_client.run_statement("use d1;")
+    autocompleter = Autocompleter(codeblock_client, cfg, mocklog)
     autocompleter.refresh()
+
     assert ["from_base64", "from_days", "from_unixtime", "from"] == get_text_list(
         autocompleter.get_suggestions("select user fro", len("select user fro")),
     )
-    client.run_statement("drop database d1;")
+    codeblock_client.run_statement("drop database d1;")
 
 
 def test_mariadb_autocompleter_suggest_nothing_after_insert_into_values_paren(
@@ -674,17 +663,17 @@ def test_mariadb_autocompleter_suggest_nothing_after_insert_into_values_paren(
 
     mariadb_server(mocklog, cfg)
 
-    manager = MariadbClientManagager(mocklog, cfg)
-    client = manager.client_for_code_block
-    manager.start()
-    autocompleter = Autocompleter(manager.client_for_autocompleter, client, mocklog)
-    client.run_statement("create database d1;")
-    client.run_statement("use d1;")
-    client.run_statement("create table t1 (a int, b int, c int);")
+    codeblock_client = MariaDBClient(mocklog, cfg)
+    codeblock_client.start()
+    codeblock_client.run_statement("create database d1;")
+    codeblock_client.run_statement("use d1;")
+    codeblock_client.run_statement("create table t1 (a int, b int, c int);")
+    autocompleter = Autocompleter(codeblock_client, cfg, mocklog)
     autocompleter.refresh()
+
     assert [] == get_text_list(
         autocompleter.get_suggestions(
             "insert into t1 values ( ", len("insert into t1 values ( ")
         ),
     )
-    client.run_statement("drop database d1;")
+    codeblock_client.run_statement("drop database d1;")

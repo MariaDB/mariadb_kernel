@@ -99,7 +99,7 @@ class ClientConfig:
             rv += f"--{key}={value} "
 
         # Disable progress reports in statements like LOAD DATA
-        rv += " --disable-progress-reports"
+        rv += "--disable-progress-reports"
         return rv
 
     def get_server_args(self):
