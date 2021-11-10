@@ -310,14 +310,18 @@ class Introspector:
             elif word_type == "database":
                 if word:
                     tables_html = autocompleter.executor.get_tables_in_db_html(word)
-                    df = re.sub(
-                        " +",
-                        "",
-                        pandas.read_html(tables_html)[0].to_string(
-                            index=False, header=False
-                        ),
-                    )
-                    plain_mime = "Tables:" + "\n" + df.strip("\n")
+
+                    try:
+                        df = re.sub(
+                            " +",
+                            "",
+                            pandas.read_html(tables_html)[0].to_string(
+                                index=False, header=False
+                            ),
+                        )
+                        plain_mime = "Tables:" + "\n" + df.strip("\n")
+                    except:
+                        plain_mime = ""
 
                     return (
                         f"{self.render_doc_header('Database')}{tables_html}",
@@ -362,29 +366,33 @@ class Introspector:
                         word, table_name, db_name, limit_num
                     )
 
-                    df_column = re.sub(
-                        " +",
-                        "",
-                        pandas.read_html(column_html)[0].to_string(
-                            index=False, na_rep="NULL", justify="left", header=False
-                        ),
-                    )
-                    df_rows = re.sub(
-                        " +",
-                        "",
-                        pandas.read_html(column_rows_html)[0].to_string(
-                            index=False, na_rep="NULL", justify="left"
-                        ),
-                    )
-                    plain_mime = (
-                        f"Datatype:"
-                        + "\n"
-                        + df_column.strip("\n")
-                        + "\n\n"
-                        + f"First {limit_num} rows of the {word} column:"
-                        + "\n"
-                        + df_rows.strip("\n")
-                    )
+                    try:
+                        df_column = re.sub(
+                            " +",
+                            "",
+                            pandas.read_html(column_html)[0].to_string(
+                                index=False, na_rep="NULL", justify="left", header=False
+                            ),
+                        )
+                        df_rows = re.sub(
+                            " +",
+                            "",
+                            pandas.read_html(column_rows_html)[0].to_string(
+                                index=False, na_rep="NULL", justify="left"
+                            ),
+                        )
+                        plain_mime = (
+                            f"Datatype:"
+                            + "\n"
+                            + df_column.strip("\n")
+                            + "\n\n"
+                            + f"First {limit_num} rows of the {word} column:"
+                            + "\n"
+                            + df_rows.strip("\n")
+                        )
+                    except:
+                        plain_mime = ""
+
                     return (
                         f"""{self.render_doc_header('Column')}
                                {column_html}<br/>
