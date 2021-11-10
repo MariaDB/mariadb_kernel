@@ -8,6 +8,7 @@ import re
 from .completion_engine import suggest_type, last_word
 import sqlparse
 from bs4 import BeautifulSoup
+import pandas
 
 
 def first_word(text):
@@ -284,21 +285,46 @@ class Introspector:
                 if word:
                     if word == "user":
                         # would show all user list
-                        return autocompleter.executor.users(html=True)
-                return None
+                        users = autocompleter.executor.users(html=True)
+                        df = re.sub(
+                            " +",
+                            "",
+                            pandas.read_html(users)[0].to_string(
+                                index=False, header=False
+                            ),
+                        )
+                        plain_mime = "Users:" + "\n" + df.strip("\n")
+                        return users, plain_mime
+
+                return "", ""
             elif word_type == "function":
                 if word:
-                    doc = autocompleter.executor.get_help_text(word)
-                    # convert text to html and beautify doc
-                    doc = convert_help_text_to_beautiful_html(doc)
-                    return f"{self.render_doc_header('Function')}{''.join(doc)}"
-                return f"{self.render_doc_header('function')}"
+                    plain_help = autocompleter.executor.get_help_text(word)
+                    # convert text to html and beautify plain_help
+                    html = convert_help_text_to_beautiful_html(plain_help)
+                    return (
+                        f"{self.render_doc_header('Function')}{''.join(html)}",
+                        plain_help,
+                    )
+                return f"{self.render_doc_header('function')}", ""
             elif word_type == "database":
                 if word:
                     tables_html = autocompleter.executor.get_tables_in_db_html(word)
-                    return f"{self.render_doc_header('Database')}{tables_html}"
+                    df = re.sub(
+                        " +",
+                        "",
+                        pandas.read_html(tables_html)[0].to_string(
+                            index=False, header=False
+                        ),
+                    )
+                    plain_mime = "Tables:" + "\n" + df.strip("\n")
+
+                    return (
+                        f"{self.render_doc_header('Database')}{tables_html}",
+                        plain_mime,
+                    )
                 else:
-                    return f"{self.render_doc_header('database')}"
+                    return f"{self.render_doc_header('database')}", ""
             elif word_type == "table":
                 db_name = result.get("database")
                 if word and db_name:
@@ -309,13 +335,21 @@ class Introspector:
                     table_rows_html = autocompleter.executor.get_partial_table_row_html(
                         word, db_name, limit_num
                     )
-                    return f"""{self.render_doc_header('Table')}
+
+                    plain_mime = (
+                        f"{word} table\n\nPlease expand to see more information."
+                    )
+
+                    return (
+                        f"""{self.render_doc_header('Table')}
                                <b>First {limit_num} rows of the {word} table</b><br/>
                                {table_rows_html}
                                <b>Table Schema</b><br/>
-                               {table_html}"""
+                               {table_html}""",
+                        plain_mime,
+                    )
                 else:
-                    return f"{self.render_doc_header('table')}"
+                    return f"{self.render_doc_header('table')}", ""
             elif word_type == "column":
                 table_name = result.get("table")
                 db_name = result.get("database")
@@ -327,12 +361,39 @@ class Introspector:
                     column_rows_html = autocompleter.executor.get_column_row_html(
                         word, table_name, db_name, limit_num
                     )
-                    return f"""{self.render_doc_header('Column')}
+
+                    df_column = re.sub(
+                        " +",
+                        "",
+                        pandas.read_html(column_html)[0].to_string(
+                            index=False, na_rep="NULL", justify="left", header=False
+                        ),
+                    )
+                    df_rows = re.sub(
+                        " +",
+                        "",
+                        pandas.read_html(column_rows_html)[0].to_string(
+                            index=False, na_rep="NULL", justify="left"
+                        ),
+                    )
+                    plain_mime = (
+                        f"Datatype:"
+                        + "\n"
+                        + df_column.strip("\n")
+                        + "\n\n"
+                        + f"First {limit_num} rows of the {word} column:"
+                        + "\n"
+                        + df_rows.strip("\n")
+                    )
+                    return (
+                        f"""{self.render_doc_header('Column')}
                                {column_html}<br/>
                                <b>First {limit_num} rows of the {word} column</b><br/>
-                               {column_rows_html}"""
+                               {column_rows_html}""",
+                        plain_mime,
+                    )
                 else:
-                    return f"{self.render_doc_header('column')}"
+                    return f"{self.render_doc_header('column')}", ""
             elif word_type == "column_hint":
                 hint = result.get("hint")
                 value_index = result.get("value_index")
@@ -357,4 +418,6 @@ class Introspector:
                         for item in result:
                             if item.name == hint:
                                 hint = item.name + " " + item.type
-                return f"{hint}"
+                return hint, hint
+
+        return "", ""

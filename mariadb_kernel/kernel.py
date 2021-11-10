@@ -226,7 +226,7 @@ class MariaDBKernel(Kernel):
         if not self.introspector:
             return empty_result
 
-        result_html = self.introspector.inspect(
+        result_html, result_plain = self.introspector.inspect(
             code, int(cursor_pos), self.autocompleter
         )
         if result_html is None or result_html == "":
@@ -234,7 +234,7 @@ class MariaDBKernel(Kernel):
 
         return {
             "status": "ok",
-            "data": {"text/html": result_html},
+            "data": {"text/html": result_html, "text/plain": result_plain},
             "metadata": {},
             "found": True,
         }
