@@ -39,6 +39,7 @@ class ClientConfig:
                 "--auth-root-authentication-method=normal",
             ],
             "debug": "False",
+            "code_completion": "True",
         }
 
         self._load_config()
@@ -98,7 +99,7 @@ class ClientConfig:
             rv += f"--{key}={value} "
 
         # Disable progress reports in statements like LOAD DATA
-        rv += " --disable-progress-reports"
+        rv += "--disable-progress-reports"
         return rv
 
     def get_server_args(self):
@@ -143,3 +144,6 @@ class ClientConfig:
 
     def debug_logging(self):
         return self.default_config["debug"] == "True"
+
+    def autocompletion_enabled(self):
+        return self.default_config["code_completion"] == "True"

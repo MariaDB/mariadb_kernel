@@ -12,15 +12,16 @@ from mariadb_kernel.mariadb_client import (
 )
 from mariadb_kernel.code_parser import CodeParser
 from mariadb_kernel.mariadb_server import MariaDBServer
-from mariadb_kernel.maria_magics.maria_magic import MariaMagic
+from .code_completion.sql_fetch import SqlFetch
+from .code_completion.autocompleter import Autocompleter
+from .code_completion.introspector import Introspector
 
 import logging
-import pexpect
-import re
 import pandas
-from bs4 import BeautifulSoup
 import os
 import signal
+
+_EXPERIMENTAL_KEY_NAME = "_jupyter_types_experimental"
 
 
 class MariaDBKernel(Kernel):
@@ -66,6 +67,24 @@ class MariaDBKernel(Kernel):
             if self.mariadb_server.is_up():
                 self.mariadb_client.start()
 
+        # Create autocompletion/introspection objects based on whether
+        # the user enabled this feature or not
+        self.autocompleter = None
+        self.introspector = None
+        if self.client_config.autocompletion_enabled():
+            try:
+                self.autocompleter = Autocompleter(
+                    self.mariadb_client, self.client_config, self.log
+                )
+                self.introspector = Introspector()
+            except:
+                # Something went terribly wrong, disabling the feature
+                self.log.error(
+                    "Code completion functionalities were disabled due to an unexpected error"
+                )
+                self.autocompleter = None
+                self.introspector = None
+
     def get_delimiter(self):
         return self.delimiter
 
@@ -83,17 +102,6 @@ class MariaDBKernel(Kernel):
 
         df = pandas.read_html(result_html)
         self.data["last_select"] = df[0]
-
-    def _styled_result(self, result_html):
-        if not result_html or not result_html.startswith("<TABLE"):
-            return result_html
-
-        soup = BeautifulSoup(result_html)
-        cells = soup.find_all(["td", "th"])
-        for cell in cells:
-            cell["style"] = "text-align:left;white-space:pre"
-
-        return str(soup)
 
     def _send_message(self, stream, message):
         error = {"name": stream, "text": message + "\n"}
@@ -128,30 +136,19 @@ class MariaDBKernel(Kernel):
             result_str = str(result)
             if not silent:
                 display_content = {
-                    "data": {"text/html": self._styled_result(result_str)},
+                    "data": {
+                        "text/html": self.mariadb_client.styled_result(result_str)
+                    },
                     "metadata": {},
                 }
                 self.send_response(self.iopub_socket, "display_data", display_content)
 
         self._execute_magics(parser.get_magics())
 
+        if self.autocompleter:
+            self.autocompleter.refresh()
+
         return rv
-
-    def num_connected_clients(self):
-        sql_query = "show status like 'Threads_connected';"
-        # If there is any errors we raise
-        # (not much we can do if there is a error)
-        result_html = self.mariadb_client.run_statement(code=sql_query)
-        if self.mariadb_client.iserror():
-            raise Exception(f"Client returned an error : {result_html}")
-        try:
-            df = pandas.read_html(result_html)
-            num_clients = int(df[0]["Value"][0])
-        except Exception:
-            self.log.error(f"Pandas failed to parse html : {result_html}")
-            raise
-
-        return num_clients
 
     def kill_server(self):
         if self.mariadb_server and self.mariadb_server.is_up():
@@ -176,17 +173,68 @@ class MariaDBKernel(Kernel):
         num_clients = None
         if self.client_config.start_server():
             try:
-                num_clients = self.num_connected_clients()
+                sql_fetch = SqlFetch(self.mariadb_client, self.log)
+                num_clients = sql_fetch.num_connected_clients()
             except Exception as e:
                 self.log.error(
                     f"Failed querying server (of number of clients connected), error: {e}"
                 )
 
         self.mariadb_client.stop()
+        expected_clients = 1
 
-        if num_clients is not None and num_clients <= 1:
+        if self.autocompleter:
+            self.autocompleter.shutdown()
+            expected_clients = 2
+
+        if num_clients is not None and num_clients <= expected_clients:
             self.log.info("No more clients connected to server")
             self.kill_server()
 
     def do_complete(self, code, cursor_pos):
-        return {"status": "ok", "matches": ["test"]}
+        if not self.autocompleter:
+            return {"status": "ok", "matches": []}
+
+        completion_list = self.autocompleter.get_suggestions(code, cursor_pos)
+        match_text_list = [completion.text for completion in completion_list]
+        offset = 0
+        if len(completion_list) > 0:
+            offset = completion_list[
+                0
+            ].start_position  # if match part is 'sel', then start_position would be -3
+        type_dict_list = []
+        for completion in completion_list:
+            if completion.display_meta is not None:
+                type_dict_list.append(
+                    dict(
+                        start=completion.start_position,
+                        end=len(completion.text) + completion.start_position,
+                        text=completion.text,
+                        type=completion.display_meta_text,  # display_meta is FormattedText object
+                    )
+                )
+        return {
+            "status": "ok",
+            "matches": match_text_list,
+            "cursor_start": cursor_pos + offset,
+            "cursor_end": cursor_pos,
+            "metadata": {_EXPERIMENTAL_KEY_NAME: type_dict_list},
+        }
+
+    def do_inspect(self, code, cursor_pos, detail_level):
+        empty_result = {"status": "ok", "data": {}, "metadata": {}, "found": False}
+        if not self.introspector:
+            return empty_result
+
+        result_html, result_plain = self.introspector.inspect(
+            code, int(cursor_pos), self.autocompleter
+        )
+        if result_html is None or result_html == "":
+            return empty_result
+
+        return {
+            "status": "ok",
+            "data": {"text/html": result_html, "text/plain": result_plain},
+            "metadata": {},
+            "found": True,
+        }

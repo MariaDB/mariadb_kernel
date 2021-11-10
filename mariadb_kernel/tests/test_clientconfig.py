@@ -105,8 +105,9 @@ def test_client_config_loads_correct_values(mock_config_path):
 
     assert (
         cfg.get_args()
-        == "--user=testuser --host=testhost --port=00 --password=secret_password --socket=socketfile "
+        == "--user=testuser --host=testhost --port=00 --password=secret_password --socket=socketfile --disable-progress-reports"
     )
+    print(cfg.get_args())
     assert cfg.start_server() == False
     assert cfg.client_bin() == "/test/path/mariadb"
     assert cfg.server_bin() == "/test/path/mariadbd"

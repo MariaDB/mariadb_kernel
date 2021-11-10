@@ -6,6 +6,8 @@
 from pexpect import replwrap, EOF, TIMEOUT, ExceptionPexpect
 from pathlib import Path
 import re
+from uuid import uuid1
+from bs4 import BeautifulSoup
 
 
 class MariaREPL(replwrap.REPLWrapper):
@@ -25,7 +27,7 @@ class MariaREPL(replwrap.REPLWrapper):
         # We avoid Pexpect's limitation of PC_MAX_CANON (1024) chars per line
         # and we also avoid more nasty issues like MariaDB client behaviour
         # sending continuation prompt when "\n" is received.
-        stmt_file = ".mariadb_statement"
+        stmt_file = ".mariadb_statement" + "_" + str(uuid1())
         statement_file_path = Path.cwd().joinpath(stmt_file)
         with statement_file_path.open("w") as f:
             f.write(code)
@@ -125,7 +127,7 @@ class MariaDBClient:
             # This matches error messages that look like:
             # """ERROR 1064 (42000) at line 1 in file: './mariadb_statement': You have an error..."""
             # We only keep the SQL error message and discard the first part
-            regex = re.compile(r"^ERROR.+in file: \'.+mariadb_statement\': ")
+            regex = re.compile(r"^ERROR.+in file: \'.+mariadb_statement.+\': ")
             self.errormsg = regex.sub("", result, count=1)
             return self.errormsg
         elif not result:
@@ -133,6 +135,20 @@ class MariaDBClient:
 
         self.error = False
         return result
+
+    def styled_result(self, result_html):
+        if not result_html or not result_html.startswith("<TABLE"):
+            return result_html
+
+        soup = BeautifulSoup(result_html)
+        cells = soup.find_all(["td", "th"])
+        for cell in cells:
+            cell["style"] = "text-align:left;white-space:pre"
+
+        table = soup.find("table")
+        table["style"] = "margin-left: 0"
+
+        return str(soup)
 
 
 class ServerIsDownError(Exception):

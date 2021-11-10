@@ -1,6 +1,7 @@
 import pytest
 from subprocess import check_output
 from unittest.mock import patch, Mock
+from threading import Thread
 
 from ..mariadb_client import (
     MariaDBClient,
@@ -129,3 +130,35 @@ def test_input_lines_longer_than_max_cannon(mariadb_server):
 
     # Should not throw a TIMEOUT exception
     client.maria_repl.run_command(large_stmt, timeout=3)
+
+
+def test_cocurrent_execute_run_statement(mariadb_server):
+    # See https://pexpect.readthedocs.io/en/stable/api/pexpect.html#pexpect.spawn.send
+    # for an explanation on why this limitation exists
+    mocklog = Mock()
+    cfg = ClientConfig(mocklog, name="nonexistentcfg.json")
+    mariadb_server(mocklog, cfg)
+
+    client = MariaDBClient(mocklog, cfg)
+    client_2 = MariaDBClient(mocklog, cfg)
+
+    client.start()
+    client_2.start()
+
+    def client_run_statement():
+        result = client.run_statement("select 1;")
+        assert (
+            result == "<TABLE BORDER=1><TR><TH>1</TH></TR><TR><TD>1</TD></TR></TABLE>"
+        )
+
+    def client_2_run_statement():
+        result = client_2.run_statement("select 2;")
+        assert (
+            result == "<TABLE BORDER=1><TR><TH>2</TH></TR><TR><TD>2</TD></TR></TABLE>"
+        )
+
+    thread_1 = Thread(target=client_run_statement)
+    thread_2 = Thread(target=client_2_run_statement)
+    thread_1.start()
+    thread_2.start()
+    thread_1.join()
