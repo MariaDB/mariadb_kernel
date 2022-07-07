@@ -49,7 +49,7 @@ class MariaDBClient:
         args = config.get_args()
         self.cmd = f"{self.client_bin} {kernel_args} {args}"
 
-        self.prompt = re.compile(r"MariaDB \[.*\]>[ \t]")
+        self.prompt = re.compile(config.server_name() + r" \[.*\]>[ \t]")
         self.log = log
         self.error = False
         self.errormsg = ""

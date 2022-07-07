@@ -30,6 +30,7 @@ class ClientConfig:
             "start_server": "True",
             "client_bin": "mysql",
             "server_bin": "mysqld",
+            "server_name": "MariaDB",
             "db_init_bin": "mysql_install_db",
             "extra_server_config": [
                 "--no-defaults",
@@ -147,3 +148,6 @@ class ClientConfig:
 
     def autocompletion_enabled(self):
         return self.default_config["code_completion"] == "True"
+
+    def server_name(self):
+        return self.default_config["server_name"]
