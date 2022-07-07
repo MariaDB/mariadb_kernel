@@ -32,6 +32,7 @@ class ClientConfig:
             "server_bin": "mysqld",
             "server_name": "MariaDB",
             "db_init_bin": "mysql_install_db",
+            "database": None,
             "extra_server_config": [
                 "--no-defaults",
                 "--skip_log_error",
@@ -94,10 +95,11 @@ class ClientConfig:
 
     def get_args(self):
         rv = ""
-        keys = ["user", "host", "port", "password", "socket"]
+        keys = ["user", "host", "port", "password", "socket", "database"]
         for key in keys:
             value = self.default_config[key]
-            rv += f"--{key}={value} "
+            if value is not None:
+                rv += f"--{key}={value} "
 
         # Disable progress reports in statements like LOAD DATA
         rv += "--disable-progress-reports"
