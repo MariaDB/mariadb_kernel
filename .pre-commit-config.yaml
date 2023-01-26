@@ -10,6 +10,6 @@ repos:
         exclude: .*.md
 
   - repo: https://github.com/psf/black
-    rev: 22.12
+    rev: '22.12'
     hooks:
     - id: black
