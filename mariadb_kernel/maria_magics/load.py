@@ -35,8 +35,8 @@ class Load(LineMagic):
 
     def execute(self, kernel, data):
         self.skip_row_num = 0
-        self.character_set = 'utf8'
-        self.separator = ','
+        self.character_set = "utf8"
+        self.separator = ","
         self.encloser = '"'
 
         if len(self.args_list) < 2:
