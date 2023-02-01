@@ -16,6 +16,7 @@ def test_mariadb_client_logs_error_when_clienbin_invalid():
     mockconfig = Mock()
     client_bin = "invalid_mysql"
     mockconfig.client_bin.return_value = client_bin
+    mockconfig.server_name.return_value = "MariaDB"
 
     client = MariaDBClient(mocklog, mockconfig)
     client.start()
@@ -32,6 +33,7 @@ def test_mariadb_client_raises_when_server_is_down():
     # Give the client a wrong port, simulate that MariaDB Server is down
     mockconfig.client_bin.return_value = "mysql"
     mockconfig.get_args.return_value = "--port=0000"
+    mockconfig.server_name.return_value = "MariaDB"
 
     client = MariaDBClient(mocklog, mockconfig)
 
