@@ -14,15 +14,15 @@ kernel_json = {
 
 
 def install_my_kernel_spec(user=True, prefix=None):
-    with TemporaryDirectory() as td:
-        os.chmod(td, 0o755)  # Starts off as 700, not user readable
-        with open(os.path.join(td, "kernel.json"), "w") as f:
-            json.dump(kernel_json, f, sort_keys=True)
+    with TemporaryDirectory() as temp:
+        os.chmod(temp, 0o755)  # Starts off as 700, not user readable
+        with open(os.path.join(temp, "kernel.json"), "w", encoding="utf-8") as file:
+            json.dump(kernel_json, file, sort_keys=True)
         # TODO: Copy any resources
 
         print("Installing Jupyter kernel spec")
         KernelSpecManager().install_kernel_spec(
-            td, "mariadb_kernel", user=user, prefix=prefix
+            temp, "mariadb_kernel", user=user, prefix=prefix
         )
 
 
@@ -34,23 +34,23 @@ def _is_root():
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser()
-    ap.add_argument(
+    arg_parse = argparse.ArgumentParser()
+    arg_parse.add_argument(
         "--user",
         action="store_true",
         help="Install to the per-user kernels registry. Default if not root.",
     )
-    ap.add_argument(
+    arg_parse.add_argument(
         "--sys-prefix",
         action="store_true",
         help="Install to sys.prefix (e.g. a virtualenv or conda env)",
     )
-    ap.add_argument(
+    arg_parse.add_argument(
         "--prefix",
         help="Install to the given prefix. "
         "Kernelspec will be installed in {PREFIX}/share/jupyter/kernels/",
     )
-    args = ap.parse_args(argv)
+    args = arg_parse.parse_args(argv)
 
     if args.sys_prefix:
         args.prefix = sys.prefix

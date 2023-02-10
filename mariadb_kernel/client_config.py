@@ -53,17 +53,17 @@ class ClientConfig:
         using_default = False
 
         try:
-            f = open(path, "r")
-            cfg = json.load(f)
-        except (OSError, json.JSONDecodeError) as e:
-            if isinstance(e, OSError):
+            with open(path, "r", encoding="utf-8") as file:
+                cfg = json.load(file)
+        except (OSError, json.JSONDecodeError) as exception:
+            if isinstance(exception, OSError):
                 self.log.info(
                     f"Config file {self.config_name} at {path} " "does not exist"
                 )
-            if isinstance(e, json.JSONDecodeError):
+            if isinstance(exception, json.JSONDecodeError):
                 self.log.info(
                     f"Config file {self.config_name} at {path} "
-                    f"is not valid JSON: {e}"
+                    f"is not valid JSON: {exception}"
                 )
             using_default = True
 
@@ -94,34 +94,34 @@ class ClientConfig:
         return os.path.join(default_dir, self.config_name)
 
     def get_args(self):
-        rv = ""
+        params = ""
         keys = ["user", "host", "port", "password", "socket", "database"]
         for key in keys:
             value = self.default_config[key]
             if value is not None:
-                rv += f"--{key}={value} "
+                params += f"--{key}={value} "
 
         # Disable progress reports in statements like LOAD DATA
-        rv += "--disable-progress-reports"
-        return rv
+        params += "--disable-progress-reports"
+        return params
 
     def get_server_args(self):
-        rv = []
-        rv.extend(self.default_config["extra_server_config"])
+        params = []
+        params.extend(self.default_config["extra_server_config"])
         # Use same connection config for both server and client
-        rv.append(f"--socket={self.default_config['socket']}")
-        rv.append(f"--port={self.default_config['port']}")
-        rv.append(f"--bind-address={self.default_config['host']}")
+        params.append(f"--socket={self.default_config['socket']}")
+        params.append(f"--port={self.default_config['port']}")
+        params.append(f"--bind-address={self.default_config['host']}")
         # Server specific config
-        rv.append(f"--datadir={self.default_config['server_datadir']}")
-        rv.append(f"--pid-file={self.default_config['server_pid']}")
-        return rv
+        params.append(f"--datadir={self.default_config['server_datadir']}")
+        params.append(f"--pid-file={self.default_config['server_pid']}")
+        return params
 
     def get_init_args(self):
-        rv = []
-        rv.extend(self.get_server_args())
-        rv.extend(self.default_config["extra_db_init_config"])
-        return rv
+        params = []
+        params.extend(self.get_server_args())
+        params.extend(self.default_config["extra_db_init_config"])
+        return params
 
     def get_server_paths(self):
         return [

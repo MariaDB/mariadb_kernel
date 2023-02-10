@@ -2,9 +2,14 @@
 # Copyright (c) MariaDB Foundation.
 # Distributed under the terms of the Modified BSD License.
 
+import os
+import signal
+import logging
+import pandas
+
 from ipykernel.kernelbase import Kernel
 
-from ._version import version as __version__
+from mariadb_kernel._version import version as __version__
 from mariadb_kernel.client_config import ClientConfig
 from mariadb_kernel.mariadb_client import (
     MariaDBClient,
@@ -16,10 +21,6 @@ from .code_completion.sql_fetch import SqlFetch
 from .code_completion.autocompleter import Autocompleter
 from .code_completion.introspector import Introspector
 
-import logging
-import pandas
-import os
-import signal
 
 _EXPERIMENTAL_KEY_NAME = "_jupyter_types_experimental"
 
@@ -77,7 +78,7 @@ class MariaDBKernel(Kernel):
                     self.mariadb_client, self.client_config, self.log
                 )
                 self.introspector = Introspector()
-            except:
+            except Exception:
                 # Something went terribly wrong, disabling the feature
                 self.log.error(
                     "Code completion functionalities were disabled due to an unexpected error"
@@ -100,8 +101,8 @@ class MariaDBKernel(Kernel):
         if not result_html or not result_html.startswith("<TABLE"):
             return
 
-        df = pandas.read_html(result_html)
-        self.data["last_select"] = df[0]
+        data = pandas.read_html(result_html)
+        self.data["last_select"] = data[0]
 
     def _send_message(self, stream, message):
         error = {"name": stream, "text": message + "\n"}
@@ -110,7 +111,7 @@ class MariaDBKernel(Kernel):
     def do_execute(
         self, code, silent, store_history=True, user_expressions=None, allow_stdin=False
     ):
-        rv = {
+        result = {
             "status": "ok",
             # The base class increments the execution count
             "execution_count": self.execution_count,
@@ -120,13 +121,13 @@ class MariaDBKernel(Kernel):
 
         try:
             parser = CodeParser(self.log, code, self.delimiter)
-        except ValueError as e:
-            self._send_message("stderr", str(e))
-            return rv
+        except ValueError as exception:
+            self._send_message("stderr", str(exception))
+            return result
 
         statements = parser.get_sql()
-        for s in statements:
-            result = self.mariadb_client.run_statement(s)
+        for statement in statements:
+            result = self.mariadb_client.run_statement(statement)
 
             if self.mariadb_client.iserror():
                 self._send_message("stderr", self.mariadb_client.error_message())
@@ -148,19 +149,19 @@ class MariaDBKernel(Kernel):
         if self.autocompleter:
             self.autocompleter.refresh()
 
-        return rv
+        return result
 
     def kill_server(self):
         if self.mariadb_server and self.mariadb_server.is_up():
-            self.log.info(f"Stopping (own) MariaDB server")
+            self.log.info("Stopping (own) MariaDB server")
             self.mariadb_server.stop()
         elif not self.mariadb_server:
             pidfile = self.client_config.get_server_pidfile()
             try:
-                with open(pidfile, "r") as f:
-                    pid = int(f.read())
-            except Exception as e:
-                self.log.error(f"Failed reading pid file {pidfile}, error: {e}")
+                with open(pidfile, "r", encoding="utf-8") as file:
+                    pid = int(file.read())
+            except Exception as exception:
+                self.log.error(f"Failed reading pid file {pidfile}, error: {exception}")
                 return
 
             if pid:
@@ -175,9 +176,9 @@ class MariaDBKernel(Kernel):
             try:
                 sql_fetch = SqlFetch(self.mariadb_client, self.log)
                 num_clients = sql_fetch.num_connected_clients()
-            except Exception as e:
+            except Exception as exception:
                 self.log.error(
-                    f"Failed querying server (of number of clients connected), error: {e}"
+                    f"Failed querying server (of number of clients connected), error: {exception}"
                 )
 
         self.mariadb_client.stop()
@@ -206,12 +207,13 @@ class MariaDBKernel(Kernel):
         for completion in completion_list:
             if completion.display_meta is not None:
                 type_dict_list.append(
-                    dict(
-                        start=completion.start_position,
-                        end=len(completion.text) + completion.start_position,
-                        text=completion.text,
-                        type=completion.display_meta_text,  # display_meta is FormattedText object
-                    )
+                    {
+                        "start": completion.start_position,
+                        "end": len(completion.text) + completion.start_position,
+                        "text": completion.text,
+                        # display_meta is FormattedText object
+                        "type": completion.display_meta_text,
+                    }
                 )
         return {
             "status": "ok",
@@ -221,7 +223,7 @@ class MariaDBKernel(Kernel):
             "metadata": {_EXPERIMENTAL_KEY_NAME: type_dict_list},
         }
 
-    def do_inspect(self, code, cursor_pos, detail_level):
+    def do_inspect(self, code, cursor_pos, detail_level=0):
         empty_result = {"status": "ok", "data": {}, "metadata": {}, "found": False}
         if not self.introspector:
             return empty_result
