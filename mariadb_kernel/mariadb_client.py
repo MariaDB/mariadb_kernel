@@ -3,11 +3,11 @@
 # Copyright (c) MariaDB Foundation.
 # Distributed under the terms of the Modified BSD License.
 
-from pexpect import replwrap, EOF, TIMEOUT, ExceptionPexpect
-from pathlib import Path
 import re
+from pathlib import Path
 from uuid import uuid1
 from bs4 import BeautifulSoup
+from pexpect import replwrap, EOF, TIMEOUT, ExceptionPexpect
 
 
 class MariaREPL(replwrap.REPLWrapper):
@@ -20,7 +20,7 @@ class MariaREPL(replwrap.REPLWrapper):
         patterns = [self.prompt]
         return self.child.expect(patterns, timeout=timeout, async_=async_)
 
-    def run_command(self, code, timeout=-1, async_=False):
+    def run_command(self, command, timeout=-1, async_=False):
 
         # Writing the cell code within a file and then sourcing it in the client
         # offers us a lot of advantages.
@@ -29,12 +29,12 @@ class MariaREPL(replwrap.REPLWrapper):
         # sending continuation prompt when "\n" is received.
         stmt_file = ".mariadb_statement" + "_" + str(uuid1())
         statement_file_path = Path.cwd().joinpath(stmt_file)
-        with statement_file_path.open("w") as f:
-            f.write(code)
+        with statement_file_path.open("w", encoding="utf-8") as file:
+            file.write(command)
         self.child.sendline(f"source {str(statement_file_path)}")
 
         try:
-            pattern = self._expect_prompt(timeout, async_)
+            self._expect_prompt(timeout, async_)
         finally:
             statement_file_path.unlink()
 
@@ -72,18 +72,18 @@ class MariaDBClient:
         try:
             self._launch_client()
             self.log.info("MariaDB client was successfully started")
-        except EOF as e:
+        except EOF as exception:
             self.log.error("MariaDB client failed to start")
 
-            if "Access denied for user" in e.value:
+            if "Access denied for user" in exception.value:
                 self.log.error("The credentials used for connecting are wrong")
-                raise LoginError()
+                raise LoginError from exception
 
             self.log.error("Most probably the MariaDB server is not started")
 
             # Let the kernel know the server is down
-            raise ServerIsDownError()
-        except ExceptionPexpect as e:
+            raise ServerIsDownError from exception
+        except ExceptionPexpect:
             self.log.error(
                 "No mariadb> command line client found at " f"{self.client_bin};"
             )
@@ -106,16 +106,16 @@ class MariaDBClient:
         result = ""
         try:
             result = self.maria_repl.run_command(code, timeout)
-        except EOF as e:
+        except EOF as exception:
             self.log.error(
                 f'MariaDB client failed to run command "{code}". '
-                f"Client most probably exited due to a crash: {e}"
+                f"Client most probably exited due to a crash: {exception}"
             )
             # TODO: attempt a restart and raise exception if it fails again
-        except TIMEOUT as e:
+        except TIMEOUT as exception:
             self.log.error(
                 f'MariaDB client failed to run command "{code}". '
-                f"Reading from the client timed out: {e}"
+                f"Reading from the client timed out: {exception}"
             )
             # TODO: attempt to rerun the cmd and raise exception if failure
 
@@ -125,12 +125,13 @@ class MariaDBClient:
             # Get rid of extra info in the error message that isn't interesting
             # in this case.
             # This matches error messages that look like:
-            # """ERROR 1064 (42000) at line 1 in file: './mariadb_statement': You have an error..."""
+            # """ERROR 1064 (42000) at line 1 in file:
+            # './mariadb_statement': You have an error..."""
             # We only keep the SQL error message and discard the first part
             regex = re.compile(r"^ERROR.+in file: \'.+mariadb_statement.+\': ")
             self.errormsg = regex.sub("", result, count=1)
             return self.errormsg
-        elif not result:
+        if not result:
             result = "Query OK"
 
         self.error = False

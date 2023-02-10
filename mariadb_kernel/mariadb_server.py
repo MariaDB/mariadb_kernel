@@ -35,6 +35,7 @@ class MariaDBServer:
             os.makedirs(path, exist_ok=True)
         try:
             self.init_db()
+            # pylint: disable=consider-using-with # setting a class member, not using directly here
             self.server = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
@@ -68,6 +69,7 @@ class MariaDBServer:
                 cmd,
                 capture_output=True,
                 universal_newlines=True,
+                check=True,
             )
         except FileNotFoundError:
             self.log.error(f"Could not find {db_init_bin}")
@@ -76,8 +78,6 @@ class MariaDBServer:
         if init_process.returncode > 0:
             self.log.error("Init failed, output:")
             self.log.error(init_process.stderr)
-
-        return
 
     def stop(self):
         if not self.is_up():

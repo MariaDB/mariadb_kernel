@@ -1,0 +1,14 @@
+[MASTER]
+ignore=_version.py
+
+[MESSAGES CONTROL]
+disable=
+    missing-docstring,
+    missing-module-docstring,
+    fixme,
+    no-name-in-module,
+    import-error,
+    broad-except,
+    too-many-arguments,
+    unused-argument,
+    abstract-method
