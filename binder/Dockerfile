@@ -1,4 +1,4 @@
-FROM jupyter/scipy-notebook:lab-3.1.4
+FROM jupyter/scipy-notebook:lab-3.6.1
 
 USER root
 
