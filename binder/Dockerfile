@@ -1,30 +1,15 @@
-FROM jupyter/scipy-notebook:lab-3.6.1
+FROM jupyter/scipy-notebook:ubuntu-22.04
 
 USER root
 
 # This will make apt-get install without question
 ARG DEBIAN_FRONTEND=noninteractive
 
-# Install updates and required packages
-RUN apt-get update && \
-    apt-get -y install -q \
-    apt-utils \
-    sudo \
-    git \
-    curl \
-    wget \
-    apt-transport-https \
-    build-essential \
-    libxml2-dev \
-    libxslt1-dev \
-    zlib1g-dev \
-    pkg-config
-
 # Add custom MariaDB repositories
-RUN curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup -o mariadb_repo_setup && bash mariadb_repo_setup --skip-maxscale --skip-tools
+RUN echo 'deb [trusted=yes] https://ci.mariadb.org/37014/amd64-ubuntu-2204-deb-autobake/debs ./' > /etc/apt/sources.list.d/mariadb.list
 
 # Install MariaDB
-RUN apt install -y mariadb-server
+RUN apt-get update -y && apt-get install -y mariadb-server mariadb-plugin-hashicorp-key-management
 
 ENV USER jovyan
 ENV NB_UID 1000
