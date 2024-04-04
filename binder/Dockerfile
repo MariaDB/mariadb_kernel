@@ -1,3 +1,6 @@
+# Update this file in content to cause
+# binder to regerate with the new ipynb
+# copied into the container
 FROM jupyter/scipy-notebook:latest
 
 USER root
