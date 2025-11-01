@@ -15,3 +15,8 @@ mariadb_kernel/_version.py
 
 # Ignore vscode editor setting
 .vscode/
+
+.eggs/
+catboost_info/
+mariadb_kernel.egg-info/
+models/

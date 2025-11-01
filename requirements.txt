@@ -7,3 +7,12 @@ setuptools-scm
 ipykernel
 beautifulsoup4
 mycli
+numpy
+joblib
+scikit-learn
+sentence-transformers>=2.2.0       
+google-generativeai>=0.3.0  
+xgboost>=1.5.0                     
+lightgbm>=3.3.0                    
+catboost>=1.0.0                    
+scipy

@@ -1,0 +1,109 @@
+The magic now emits warnings if a file can't be read or requires an optional extractor (PyPDF2 / python-docx) but those libraries are not installed.
+
+If you'd like, I can:
+
+add support for PPTX / HTML extraction,
+
+automatically strip front-matter from markdown files,
+
+or produce a small PR-style diff instead of this canvas update. Which would you like?
+
+The magic now emits warnings if a file can't be read or requires an optional extractor (PyPDF2 / python-docx) but those libraries are not installed.
+
+If you'd like, I can:
+
+add support for PPTX / HTML extraction,
+
+automatically strip front-matter from markdown files,
+
+or produce a small PR-style diff instead of this canvas update. Which would you like?
+
+The magic now emits warnings if a file can't be read or requires an optional extractor (PyPDF2 / python-docx) but those libraries are not installed.
+
+If you'd like, I can:
+
+add support for PPTX / HTML extraction,
+
+automatically strip front-matter from markdown files,
+
+or produce a small PR-style diff instead of this canvas update. Which would you like?
+
+The magic now emits warnings if a file can't be read or requires an optional extractor (PyPDF2 / python-docx) but those libraries are not installed.
+
+If you'd like, I can:
+
+add support for PPTX / HTML extraction,
+
+automatically strip front-matter from markdown files,
+
+or produce a small PR-style diff instead of this canvas update. Which would you like?
+
+The magic now emits warnings if a file can't be read or requires an optional extractor (PyPDF2 / python-docx) but those libraries are not installed.
+
+If you'd like, I can:
+
+add support for PPTX / HTML extraction,
+
+automatically strip front-matter from markdown files,
+
+or produce a small PR-style diff instead of this canvas update. Which would you like?
+
+The magic now emits warnings if a file can't be read or requires an optional extractor (PyPDF2 / python-docx) but those libraries are not installed.
+
+If you'd like, I can:
+
+add support for PPTX / HTML extraction,
+
+automatically strip front-matter from markdown files,
+
+or produce a small PR-style diff instead of this canvas update. Which would you like?
+
+The magic now emits warnings if a file can't be read or requires an optional extractor (PyPDF2 / python-docx) but those libraries are not installed.
+
+If you'd like, I can:
+
+add support for PPTX / HTML extraction,
+
+automatically strip front-matter from markdown files,
+
+or produce a small PR-style diff instead of this canvas update. Which would you like?
+
+The magic now emits warnings if a file can't be read or requires an optional extractor (PyPDF2 / python-docx) but those libraries are not installed.
+
+If you'd like, I can:
+
+add support for PPTX / HTML extraction,
+
+automatically strip front-matter from markdown files,
+
+or produce a small PR-style diff instead of this canvas update. Which would you like?
+
+The magic now emits warnings if a file can't be read or requires an optional extractor (PyPDF2 / python-docx) but those libraries are not installed.
+
+If you'd like, I can:
+
+add support for PPTX / HTML extraction,
+
+automatically strip front-matter from markdown files,
+
+or produce a small PR-style diff instead of this canvas update. Which would you like?
+
+The magic now emits warnings if a file can't be read or requires an optional extractor (PyPDF2 / python-docx) but those libraries are not installed.
+
+If you'd like, I can:
+
+add support for PPTX / HTML extraction,
+
+automatically strip front-matter from markdown files,
+
+or produce a small PR-style diff instead of this canvas update. Which would you like?
+
+The magic now emits warnings if a file can't be read or requires an optional extractor (PyPDF2 / python-docx) but those libraries are not installed.
+
+If you'd like, I can:
+
+add support for PPTX / HTML extraction,
+
+automatically strip front-matter from markdown files,
+
+or produce a small PR-style diff instead of this canvas update. Which would you like?
